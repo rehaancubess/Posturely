@@ -1,0 +1,11 @@
+# Uncomment the next line to define a global platform for your project
+platform :ios, '15.0'
+
+target 'posturelynew' do
+  use_frameworks!
+  
+  # MediaPipe Tasks Vision for pose landmark detection
+  pod 'MediaPipeTasksVision'
+  
+  # Add any other pods you need here
+end 
