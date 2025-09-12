@@ -164,33 +164,41 @@ object Supa {
     }
 
     suspend fun getWeeksProgress(userEmail: String): Map<String, Any> {
-        // Compute start (Sunday) and end (Saturday) of current week in yyyy-MM-dd
         val todayMillis = DateTime.getCurrentTimeInMilliSeconds()
-        // Get ISO weekday [1..7], assume DateTime can format weekday; fallback to 1 (Mon)
-        // We'll approximate by stepping back to Sunday by trying 6 days back max.
+        val weekStartMillis = todayMillis - 6L * 24L * 60L * 60L * 1000L // 7 days ago
+        
+        val weekStartDate = DateTime.formatTimeStamp(weekStartMillis, "yyyy-MM-dd")
+        val todayDate = DateTime.formatTimeStamp(todayMillis, "yyyy-MM-dd")
+        
+        // Single query for all records in the date range
+        val allRecords = try {
+            client.postgrest.from("posture_records")
+                .select {
+                    filter {
+                        eq("user_email", userEmail)
+                        gte("date", weekStartDate)
+                        lte("date", todayDate)
+                    }
+                }
+                .decodeList<PostureRecord>()
+        } catch (e: Exception) {
+            println("❌ Supabase: Error fetching weekly data: ${e.message}")
+            emptyList()
+        }
+
+        // Generate expected dates for the week
         val dates = (0..6).map { offset ->
             val millis = todayMillis - offset * 24L * 60L * 60L * 1000L
             DateTime.formatTimeStamp(millis, "yyyy-MM-dd")
         }.reversed()
-        // Fetch all records for these 7 days and aggregate
-        val allRecords = mutableListOf<PostureRecord>()
-        for (d in dates) {
-            val daily = client.postgrest.from("posture_records")
-                .select {
-                    filter {
-                        eq("user_email", userEmail)
-                        eq("date", d)
-                    }
-                }
-                .decodeList<PostureRecord>()
-            allRecords.addAll(daily)
-        }
 
         if (allRecords.isEmpty()) {
             return mapOf(
                 "totalMinutes" to 0,
                 "averageScore" to 0,
                 "days" to dates.associateWith { 0 },
+                "scores" to dates.associateWith { 0 },
+                "dateOrder" to dates
             )
         }
 
@@ -209,6 +217,150 @@ object Supa {
             "days" to perDayMinutes,
             "scores" to perDayAvgScores,
             "dateOrder" to dates
+        )
+    }
+
+    suspend fun getMonthsProgress(userEmail: String): Map<String, Any> {
+        val todayMillis = DateTime.getCurrentTimeInMilliSeconds()
+        val monthStartMillis = todayMillis - 35L * 24L * 60L * 60L * 1000L // 5 weeks ago
+        
+        val monthStartDate = DateTime.formatTimeStamp(monthStartMillis, "yyyy-MM-dd")
+        val todayDate = DateTime.formatTimeStamp(todayMillis, "yyyy-MM-dd")
+        
+        // Single query for all records in the date range
+        val allRecords = try {
+            client.postgrest.from("posture_records")
+                .select {
+                    filter {
+                        eq("user_email", userEmail)
+                        gte("date", monthStartDate)
+                        lte("date", todayDate)
+                    }
+                }
+                .decodeList<PostureRecord>()
+        } catch (e: Exception) {
+            println("❌ Supabase: Error fetching monthly data: ${e.message}")
+            emptyList()
+        }
+
+        // Generate week labels and date ranges
+        val weekLabels = listOf("W1", "W2", "W3", "W4", "W5")
+        val weekRanges = (0..4).map { weekOffset ->
+            val weekStartMillis = todayMillis - weekOffset * 7L * 24L * 60L * 60L * 1000L
+            val weekEndMillis = weekStartMillis + 6L * 24L * 60L * 60L * 1000L
+            
+            val weekStartDate = DateTime.formatTimeStamp(weekStartMillis, "yyyy-MM-dd")
+            val weekEndDate = DateTime.formatTimeStamp(weekEndMillis, "yyyy-MM-dd")
+            
+            Pair(weekLabels[4 - weekOffset], Pair(weekStartDate, weekEndDate))
+        }.reversed()
+
+        if (allRecords.isEmpty()) {
+            return mapOf(
+                "totalMinutes" to 0,
+                "averageScore" to 0,
+                "weeks" to weekLabels.associateWith { 0 },
+                "scores" to weekLabels.associateWith { 0 },
+                "weekOrder" to weekLabels
+            )
+        }
+
+        val grouped = allRecords.groupBy { record ->
+            weekRanges.find { (_, dateRange) -> 
+                record.date >= dateRange.first && record.date <= dateRange.second 
+            }?.first ?: "Unknown"
+        }
+        
+        val perWeekMinutes = weekLabels.associate { weekLabel -> 
+            weekLabel to (grouped[weekLabel]?.size ?: 0)
+        }
+        
+        val perWeekAvgScores = weekLabels.associate { weekLabel ->
+            val recs = grouped[weekLabel].orEmpty()
+            weekLabel to if (recs.isEmpty()) 0 else recs.map { it.average_posture_score }.average().toInt()
+        }
+        
+        val averageScore = allRecords.map { it.average_posture_score }.average().toInt()
+        val totalMinutes = allRecords.size
+
+        return mapOf(
+            "totalMinutes" to totalMinutes,
+            "averageScore" to averageScore,
+            "weeks" to perWeekMinutes,
+            "scores" to perWeekAvgScores,
+            "weekOrder" to weekLabels
+        )
+    }
+
+    suspend fun getYearsProgress(userEmail: String): Map<String, Any> {
+        val todayMillis = DateTime.getCurrentTimeInMilliSeconds()
+        val yearStartMillis = todayMillis - 365L * 24L * 60L * 60L * 1000L // 1 year ago
+        
+        val yearStartDate = DateTime.formatTimeStamp(yearStartMillis, "yyyy-MM-dd")
+        val todayDate = DateTime.formatTimeStamp(todayMillis, "yyyy-MM-dd")
+        
+        // Single query for all records in the date range
+        val allRecords = try {
+            client.postgrest.from("posture_records")
+                .select {
+                    filter {
+                        eq("user_email", userEmail)
+                        gte("date", yearStartDate)
+                        lte("date", todayDate)
+                    }
+                }
+                .decodeList<PostureRecord>()
+        } catch (e: Exception) {
+            println("❌ Supabase: Error fetching yearly data: ${e.message}")
+            emptyList()
+        }
+
+        // Generate month labels and date ranges (30-day periods)
+        val monthLabels = listOf("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")
+        val monthRanges = (0..11).map { monthOffset ->
+            val monthStartMillis = todayMillis - monthOffset * 30L * 24L * 60L * 60L * 1000L
+            val monthEndMillis = monthStartMillis + 29L * 24L * 60L * 60L * 1000L
+            
+            val monthStartDate = DateTime.formatTimeStamp(monthStartMillis, "yyyy-MM-dd")
+            val monthEndDate = DateTime.formatTimeStamp(monthEndMillis, "yyyy-MM-dd")
+            
+            Pair(monthLabels[11 - monthOffset], Pair(monthStartDate, monthEndDate))
+        }.reversed()
+
+        if (allRecords.isEmpty()) {
+            return mapOf(
+                "totalMinutes" to 0,
+                "averageScore" to 0,
+                "months" to monthLabels.associateWith { 0 },
+                "scores" to monthLabels.associateWith { 0 },
+                "monthOrder" to monthLabels
+            )
+        }
+
+        val grouped = allRecords.groupBy { record ->
+            monthRanges.find { (_, dateRange) -> 
+                record.date >= dateRange.first && record.date <= dateRange.second 
+            }?.first ?: "Unknown"
+        }
+        
+        val perMonthMinutes = monthLabels.associate { monthLabel -> 
+            monthLabel to (grouped[monthLabel]?.size ?: 0)
+        }
+        
+        val perMonthAvgScores = monthLabels.associate { monthLabel ->
+            val recs = grouped[monthLabel].orEmpty()
+            monthLabel to if (recs.isEmpty()) 0 else recs.map { it.average_posture_score }.average().toInt()
+        }
+        
+        val averageScore = allRecords.map { it.average_posture_score }.average().toInt()
+        val totalMinutes = allRecords.size
+
+        return mapOf(
+            "totalMinutes" to totalMinutes,
+            "averageScore" to averageScore,
+            "months" to perMonthMinutes,
+            "scores" to perMonthAvgScores,
+            "monthOrder" to monthLabels
         )
     }
 }

@@ -18,7 +18,15 @@ data class ProgressData(
     // Weekly breakdown for charts (yyyy-MM-dd -> minutes)
     val weekDays: Map<String, Int> = emptyMap(),
     val weekScores: Map<String, Int> = emptyMap(),
-    val weekOrder: List<String> = emptyList()
+    val weekOrder: List<String> = emptyList(),
+    // Monthly breakdown for charts (W1, W2, etc. -> minutes)
+    val monthWeeks: Map<String, Int> = emptyMap(),
+    val monthWeekScores: Map<String, Int> = emptyMap(),
+    val monthWeekOrder: List<String> = emptyList(),
+    // Yearly breakdown for charts (J, F, M, etc. -> minutes)
+    val yearMonths: Map<String, Int> = emptyMap(),
+    val yearMonthScores: Map<String, Int> = emptyMap(),
+    val yearMonthOrder: List<String> = emptyList()
 )
 
 class ProgressService {
@@ -39,10 +47,10 @@ class ProgressService {
             while (true) {
                 try {
                     refreshProgress()
-                    delay(30000) // Refresh every 30 seconds
+                    delay(120000) // Refresh every 2 minutes (reduced frequency)
                 } catch (e: Exception) {
                     println("❌ ProgressService: Error refreshing progress: ${e.message}")
-                    delay(60000) // Wait 1 minute before retrying
+                    delay(300000) // Wait 5 minutes before retrying on error
                 }
             }
         }
@@ -55,8 +63,11 @@ class ProgressService {
             _isLoading.value = true
             println("🔄 ProgressService: Refreshing progress data for $userEmail...")
             
-            val todayMap = Supa.getTodaysProgress(userEmail)
-            val weekMap = Supa.getWeeksProgress(userEmail)
+            // Use withTimeout to prevent hanging requests
+            val todayMap = withTimeout(15000) { Supa.getTodaysProgress(userEmail) }
+            val weekMap = withTimeout(15000) { Supa.getWeeksProgress(userEmail) }
+            val monthMap = withTimeout(15000) { Supa.getMonthsProgress(userEmail) }
+            val yearMap = withTimeout(15000) { Supa.getYearsProgress(userEmail) }
             
             val progressData = ProgressData(
                 totalMinutes = weekMap["totalMinutes"] as? Int ?: 0,
@@ -69,7 +80,13 @@ class ProgressService {
                 badMinutes = todayMap["badMinutes"] as? Int ?: 0,
                 weekDays = (weekMap["days"] as? Map<String, Int>) ?: emptyMap(),
                 weekScores = (weekMap["scores"] as? Map<String, Int>) ?: emptyMap(),
-                weekOrder = (weekMap["dateOrder"] as? List<String>) ?: emptyList()
+                weekOrder = (weekMap["dateOrder"] as? List<String>) ?: emptyList(),
+                monthWeeks = (monthMap["weeks"] as? Map<String, Int>) ?: emptyMap(),
+                monthWeekScores = (monthMap["scores"] as? Map<String, Int>) ?: emptyMap(),
+                monthWeekOrder = (monthMap["weekOrder"] as? List<String>) ?: emptyList(),
+                yearMonths = (yearMap["months"] as? Map<String, Int>) ?: emptyMap(),
+                yearMonthScores = (yearMap["scores"] as? Map<String, Int>) ?: emptyMap(),
+                yearMonthOrder = (yearMap["monthOrder"] as? List<String>) ?: emptyList()
             )
             
             _progressData.value = progressData
@@ -77,6 +94,7 @@ class ProgressService {
             
         } catch (e: Exception) {
             println("❌ ProgressService: Failed to refresh progress: ${e.message}")
+            // Don't update data on error, keep existing data
         } finally {
             _isLoading.value = false
         }

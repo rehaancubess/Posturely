@@ -61,6 +61,7 @@ fun ProfileScreen(
     }
 
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
 
     BoxWithConstraints(
         modifier = Modifier
@@ -138,7 +139,7 @@ fun ProfileScreen(
 
             // Menu items
             Column(verticalArrangement = Arrangement.spacedBy(12.dp * vScale)) {
-                ProfileMenuItem("Go Premium") { }
+                // ProfileMenuItem("Go Premium") { }
                 ProfileMenuItem("Contact Us") {
                     openEmailClient("rehaancubes@gmail.com", subject = "Posturely Support", body = "")
                 }
@@ -147,7 +148,7 @@ fun ProfileScreen(
                     // For now, this could open external browser
                 }
                 ProfileMenuItem("Delete Account") {
-                    // TODO: Hook to backend delete flow
+                    showDeleteAccountDialog = true
                 }
             }
 
@@ -207,6 +208,56 @@ fun ProfileScreen(
                     },
                     dismissButton = {
                         TextButton(onClick = { showLogoutDialog = false }) {
+                            Text("Cancel", color = textPrimary, fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    shape = RoundedCornerShape(20.dp),
+                    containerColor = cardBg
+                )
+            }
+
+            // Delete Account Confirmation Dialog
+            if (showDeleteAccountDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDeleteAccountDialog = false },
+                    title = {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                "Delete Account",
+                                color = textPrimary,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            Spacer(modifier = Modifier.height(6.dp * vScale))
+                            Box(
+                                modifier = Modifier
+                                    .height(4.dp)
+                                    .width(56.dp)
+                                    .background(accentYellow, shape = RoundedCornerShape(2.dp))
+                            )
+                        }
+                    },
+                    text = {
+                        Text(
+                            "Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently lost.",
+                            color = textPrimary,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                showDeleteAccountDialog = false
+                                onLogout() // For now, just logout instead of actual deletion
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC3545)) // Red color for delete
+                        ) {
+                            Text("Delete Account", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDeleteAccountDialog = false }) {
                             Text("Cancel", color = textPrimary, fontWeight = FontWeight.Bold)
                         }
                     },

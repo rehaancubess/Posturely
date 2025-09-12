@@ -1,6 +1,7 @@
 package com.example.posturelynew
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,6 +17,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import org.jetbrains.compose.resources.painterResource
+import posturelynew.composeapp.generated.resources.Res
+import posturelynew.composeapp.generated.resources.nostats
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -27,9 +31,9 @@ fun StatsScreen() {
     val pageBg = Color(0xFFFED867)
     val cardBg = Color(0xFFFFF0C0)
     val textPrimary = Color(0xFF0F1931)
-    val accentDonut = Color(0xFF8B4513) // Brown color for donut chart
+    val accentDonut = Color(0xFF7A4B00) // Same brown as start tracking button
     val accentDonutLight = Color(0xFFD2B48C) // Light brown for background ring
-    val legendGood = Color(0xFF8B4513) // Brown for legend
+    val legendGood = Color(0xFF7A4B00) // Same brown as start tracking button
     val legendBad = Color(0xFFA0522D) // Darker brown for legend
 
     // Load progress data (same service used on Home)
@@ -56,6 +60,10 @@ fun StatsScreen() {
     // Average score for the donut chart
     val averageScore = progressData.averageScore.takeIf { it > 0 } ?: 0
     val averageScorePercent = (averageScore / 100f).coerceIn(0f, 1f)
+    
+    // Check if month or year view should show nostats (temporarily disabled)
+    val hasInsufficientMonthData = selectedRange == 1 // Always show nostats for month
+    val hasInsufficientYearData = selectedRange == 2 // Always show nostats for year
 
     Column(
         modifier = Modifier
@@ -87,108 +95,136 @@ fun StatsScreen() {
             StatsRangeChip(label = "Year", selected = selectedRange == 2) { selectedRange = 2 }
         }
 
-        // Donut + Legend + Line chart row
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Donut chart
-            DonutChart(
-                percent = averageScorePercent,
-                size = 140.dp,
-                ringColor = accentDonut,
-                bgRingColor = accentDonutLight,
-                labelPrimary = averageScore.toString(),
-                labelSecondary = "Average Score",
-                textColor = textPrimary
-            )
-
-            Spacer(Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                // Legend
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(12.dp).background(legendGood, CircleShape))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Good", color = textPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                }
-                Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(12.dp).background(legendBad, CircleShape))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Bad", color = textPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                }
-
-                Spacer(Modifier.height(16.dp))
-
-                // Simple line chart with fake weekly trend derived from progress
-                LineChart(
+        // Show nostats image if month or year view, otherwise show normal content
+        if (hasInsufficientMonthData || hasInsufficientYearData) {
+            // Show nostats image for month/year data (temporarily disabled)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.nostats),
+                    contentDescription = "No stats available",
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp),
-                    values = generateWeeklyTrend(progressData)
+                        .size(500.dp)
+                        .padding(16.dp)
                 )
-                Spacer(Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    listOf("S","M","T","W","T","F","S").forEach { d ->
-                        Text(d, color = textPrimary.copy(alpha = 0.9f), fontSize = 12.sp)
+            }
+        } else {
+            // Donut + Legend + Line chart row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Donut chart
+                DonutChart(
+                    percent = averageScorePercent,
+                    size = 140.dp,
+                    ringColor = accentDonut,
+                    bgRingColor = accentDonutLight,
+                    labelPrimary = averageScore.toString(),
+                    labelSecondary = "Average Score",
+                    textColor = textPrimary
+                )
+
+                Spacer(Modifier.width(16.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    // Legend
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(12.dp).background(legendGood, CircleShape))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Good", color = textPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(12.dp).background(legendBad, CircleShape))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Bad", color = textPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    // Simple line chart with fake weekly trend derived from progress
+                    LineChart(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(80.dp),
+                        values = generateWeeklyTrend(progressData)
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        listOf("S","M","T","W","T","F","S").forEach { d ->
+                            Text(d, color = textPrimary.copy(alpha = 0.9f), fontSize = 12.sp)
+                        }
                     }
                 }
             }
         }
 
-        // Cards row: Total Time, Average Score
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            StatCard(
-                title = "Total Time",
-                value = formatMinutes(progressData.totalMinutes),
-                modifier = Modifier.weight(1f),
-                cardBg = cardBg,
-                textPrimary = textPrimary
-            )
-            StatCard(
-                title = "Average Score",
-                value = (progressData.averageScore.takeIf { it > 0 } ?: 0).toString(),
-                modifier = Modifier.weight(1f),
-                cardBg = cardBg,
-                textPrimary = textPrimary
-            )
-        }
+        // Only show cards and bar chart if not insufficient month/year data
+        if (!hasInsufficientMonthData && !hasInsufficientYearData) {
+            // Cards row: Total Time, Average Score
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                StatCard(
+                    title = "Total Time",
+                    value = formatMinutes(progressData.totalMinutes),
+                    modifier = Modifier.weight(1f),
+                    cardBg = cardBg,
+                    textPrimary = textPrimary
+                )
+                StatCard(
+                    title = "Average Score",
+                    value = (progressData.averageScore.takeIf { it > 0 } ?: 0).toString(),
+                    modifier = Modifier.weight(1f),
+                    cardBg = cardBg,
+                    textPrimary = textPrimary
+                )
+            }
 
-        Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(12.dp))
 
-        // Total Minutes + Bar chart
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(cardBg, RoundedCornerShape(20.dp))
-                .padding(16.dp)
-        ) {
-            Text("Total Minutes", color = textPrimary.copy(alpha = 0.8f), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(8.dp))
-            Text((progressData.totalMinutes).toString(), color = textPrimary, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
-            Spacer(Modifier.height(8.dp))
-            BarChart(
+            // Total Minutes + Bar chart
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp),
-                values = generateBars(progressData, selectedRange)
-            )
-            Spacer(Modifier.height(6.dp))
-            // Labels under the bars based on selected range
-            val barLabels = when (selectedRange) {
-                0 -> listOf("S","M","T","W","T","F","S")
-                1 -> listOf("W1","W2","W3","W4","W5")
-                else -> listOf("J","F","M","A","M","J","J","A","S","O","N","D")
-            }
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                barLabels.forEach { label ->
-                    Text(label, color = textPrimary.copy(alpha = 0.9f), fontSize = 12.sp)
+                    .background(cardBg, RoundedCornerShape(20.dp))
+                    .padding(16.dp)
+            ) {
+                Text("Total Minutes", color = textPrimary.copy(alpha = 0.8f), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(8.dp))
+                Text((progressData.totalMinutes).toString(), color = textPrimary, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
+                Spacer(Modifier.height(8.dp))
+                BarChart(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp)
+                        .padding(start = 20.dp),
+                    values = generateBars(progressData, selectedRange)
+                )
+                Spacer(Modifier.height(6.dp))
+                // Labels under the bars based on selected range
+                val barLabels = when (selectedRange) {
+                    0 -> listOf("S","M","T","W","T","F","S")
+                    1 -> listOf("W1","W2","W3","W4","W5")
+                    else -> listOf("J","F","M","A","M","J","J","A","S","O","N","D")
+                }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    barLabels.forEach { label ->
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(label, color = textPrimary.copy(alpha = 0.9f), fontSize = 12.sp)
+                        }
+                    }
                 }
             }
         }
@@ -264,7 +300,7 @@ private fun LineChart(modifier: Modifier, values: List<Float>) {
             val x = stepX * index
             val y = size.height - ((v - min) / range) * size.height
             val p = Offset(x, y)
-            prev?.let { drawLine(color = Color(0xFF8B4513), start = it, end = p, strokeWidth = 6f) }
+            prev?.let { drawLine(color = Color(0xFF7A4B00), start = it, end = p, strokeWidth = 6f) }
             prev = p
         }
     }
@@ -281,7 +317,7 @@ private fun BarChart(modifier: Modifier, values: List<Float>) {
             val left = (index * (barWidth * 1.8f))
             val top = size.height - height
             drawRoundRect(
-                color = Color(0xFF8B4513),
+                color = Color(0xFF7A4B00),
                 topLeft = Offset(left, top),
                 size = Size(barWidth, height),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(12f, 12f)
@@ -317,28 +353,88 @@ private fun formatMinutes(totalMinutes: Int): String {
 }
 
 private fun generateWeeklyTrend(progressData: ProgressData): List<Float> {
-    // Create a simple 7-day trend using available numbers; ensures non-empty
-    val base = (progressData.averageScore.takeIf { it > 0 } ?: 60).toFloat()
-    val goodBoost = (progressData.goodMinutes.coerceAtLeast(1)).toFloat() / 10f
-    val arr = listOf(30f, 35f, 40f, 42f, 60f + goodBoost, 58f, 65f)
-    return arr.map { (it + base / 10f).coerceAtMost(100f) }
+    // Use real weekly data from Supabase
+    val weekOrder = progressData.weekOrder
+    val weekScores = progressData.weekScores
+    
+    if (weekOrder.isEmpty() || weekScores.isEmpty()) {
+        // Fallback to mock data if no real data available
+        val base = (progressData.averageScore.takeIf { it > 0 } ?: 60).toFloat()
+        val goodBoost = (progressData.goodMinutes.coerceAtLeast(1)).toFloat() / 10f
+        val arr = listOf(30f, 35f, 40f, 42f, 60f + goodBoost, 58f, 65f)
+        return arr.map { (it + base / 10f).coerceAtMost(100f) }
+    }
+    
+    // Use real data in the correct order
+    return weekOrder.map { day ->
+        weekScores[day]?.toFloat() ?: 0f
+    }
 }
 
 private fun generateBars(progressData: ProgressData, range: Int): List<Float> {
-    val total = progressData.totalMinutes.coerceAtLeast(0)
     return when (range) {
-        // Week: 7 bars (S..S)
+        // Week: 7 bars (S..S) - use real weekly data
         0 -> {
-            val base = (total / 7f).coerceAtLeast(1f)
-            listOf(0.8f, 0.6f, 0.7f, 0.75f, 1.2f, 1.0f, 0.9f).map { it * base }
+            val weekOrder = progressData.weekOrder
+            val weekDays = progressData.weekDays
+            
+            if (weekOrder.isEmpty() || weekDays.isEmpty()) {
+                // Fallback to mock data
+                val total = progressData.totalMinutes.coerceAtLeast(0)
+                val base = (total / 7f).coerceAtLeast(1f)
+                listOf(0.8f, 0.6f, 0.7f, 0.75f, 1.2f, 1.0f, 0.9f).map { it * base }
+            } else {
+                // Use real data in the correct order
+                weekOrder.map { day ->
+                    weekDays[day]?.toFloat() ?: 0f
+                }
+            }
         }
-        // Month: 5 bars (W1..W5)
+        // Month: 5 bars (W1..W5) - temporarily disabled
         1 -> {
+            // Commented out for later use
+            /*
+            val monthWeekOrder = progressData.monthWeekOrder
+            val monthWeeks = progressData.monthWeeks
+            
+            if (monthWeekOrder.isEmpty() || monthWeeks.isEmpty()) {
+                // Fallback to mock data
+                val total = progressData.totalMinutes.coerceAtLeast(0)
+                val base = (total / 5f).coerceAtLeast(1f)
+                listOf(0.7f, 0.8f, 1.1f, 0.9f, 1.0f).map { it * base }
+            } else {
+                // Use real data in the correct order
+                monthWeekOrder.map { week ->
+                    monthWeeks[week]?.toFloat() ?: 0f
+                }
+            }
+            */
+            // Temporary mock data for month
+            val total = progressData.totalMinutes.coerceAtLeast(0)
             val base = (total / 5f).coerceAtLeast(1f)
             listOf(0.7f, 0.8f, 1.1f, 0.9f, 1.0f).map { it * base }
         }
-        // Year: 12 bars (J..D)
+        // Year: 12 bars (J..D) - temporarily disabled
         else -> {
+            // Commented out for later use
+            /*
+            val yearMonthOrder = progressData.yearMonthOrder
+            val yearMonths = progressData.yearMonths
+            
+            if (yearMonthOrder.isEmpty() || yearMonths.isEmpty()) {
+                // Fallback to mock data
+                val total = progressData.totalMinutes.coerceAtLeast(0)
+                val base = (total / 12f).coerceAtLeast(1f)
+                listOf(0.6f,0.7f,0.8f,0.9f,1.0f,1.1f,1.0f,0.95f,0.9f,0.85f,0.8f,0.75f).map { it * base }
+            } else {
+                // Use real data in the correct order
+                yearMonthOrder.map { month ->
+                    yearMonths[month]?.toFloat() ?: 0f
+                }
+            }
+            */
+            // Temporary mock data for year
+            val total = progressData.totalMinutes.coerceAtLeast(0)
             val base = (total / 12f).coerceAtLeast(1f)
             listOf(0.6f,0.7f,0.8f,0.9f,1.0f,1.1f,1.0f,0.95f,0.9f,0.85f,0.8f,0.75f).map { it * base }
         }
