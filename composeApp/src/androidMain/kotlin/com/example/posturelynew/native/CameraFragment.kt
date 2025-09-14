@@ -63,60 +63,17 @@ class CameraFragment(
                     processImage(imageProxy)
                 }
                 
-                // Try to select wide angle camera for better pose detection
+                // Use front camera for self-monitoring posture tracking
                 val cameraSelector = CameraSelector.Builder()
                     .requireLensFacing(CameraSelector.LENS_FACING_FRONT)
                     .build()
                 
-                // Get available cameras and filter for wide angle
-                val availableCameras = cameraProvider?.availableCameraInfos ?: emptyList()
-                android.util.Log.d("CameraFragment", "Available cameras: ${availableCameras.size}")
-                
-                // Try multiple approaches to find wide angle camera
-                var wideAngleCamera = availableCameras.find { cameraInfo ->
-                    try {
-                        // For now, just check if it's a front camera
-                        // Camera characteristics access is complex and varies by device
-                        true // Accept any front camera for now
-                    } catch (e: Exception) {
-                        android.util.Log.w("CameraFragment", "Error checking camera characteristics", e)
-                        false
-                    }
-                }
-                
-                // If no wide angle found, try to find ultra-wide camera
-                if (wideAngleCamera == null) {
-                    wideAngleCamera = availableCameras.find { cameraInfo ->
-                        try {
-                            // For now, just check if it's a front camera
-                            // Camera characteristics access is complex and varies by device
-                            true // Accept any front camera for now
-                        } catch (e: Exception) {
-                            false
-                        }
-                    }
-                    if (wideAngleCamera != null) {
-                        android.util.Log.d("CameraFragment", "Found ultra-wide camera")
-                    }
-                }
-                
-                // Use wide angle camera if available, otherwise fall back to default front camera
-                val finalCameraSelector = if (wideAngleCamera != null) {
-                    android.util.Log.d("CameraFragment", "Using wide angle camera")
-                    CameraSelector.Builder()
-                        .addCameraFilter { 
-                            listOf(wideAngleCamera) 
-                        }
-                        .build()
-                } else {
-                    android.util.Log.d("CameraFragment", "Using default front camera")
-                    cameraSelector
-                }
+                android.util.Log.d("CameraFragment", "Using front camera for posture tracking")
                 
                 cameraProvider?.unbindAll()
                 camera = cameraProvider?.bindToLifecycle(
                     lifecycleOwner,
-                    finalCameraSelector,
+                    cameraSelector,
                     imageAnalyzer
                 )
                 

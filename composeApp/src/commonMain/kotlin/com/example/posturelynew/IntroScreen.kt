@@ -38,7 +38,7 @@ fun IntroScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Top spacing for status bar
-        Spacer(modifier = Modifier.height(100.dp))
+        Spacer(modifier = Modifier.height(60.dp))
         
         // Horizontal logo
         Image(
@@ -112,7 +112,7 @@ fun IntroScreen(
             )
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(32.dp))
         
         // Footer text
         Text(
@@ -135,11 +135,12 @@ private fun FeatureItem(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top
     ) {
-        // Icon
+        // Simple brown icon
         Text(
             text = icon,
-            fontSize = 24.sp,
-            modifier = Modifier.padding(end = 16.dp)
+            fontSize = 28.sp,
+            color = accentBrown,
+            modifier = Modifier.padding(end = 20.dp)
         )
         
         // Content
@@ -151,7 +152,7 @@ private fun FeatureItem(
                 color = textPrimary,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 4.dp)
+                modifier = Modifier.padding(bottom = 6.dp)
             )
             Text(
                 text = description,

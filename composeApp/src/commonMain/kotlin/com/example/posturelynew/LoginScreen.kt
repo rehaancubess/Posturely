@@ -14,6 +14,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import kotlinx.coroutines.delay
 import com.example.posturelynew.supabase.Supa
 
@@ -28,10 +31,14 @@ fun LoginScreen(
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     
-    val pageBg = Color(0xFFFFF9EA)
-    val textPrimary = Color(0xFF0F1931)
+    // Focus requester for autofocus
+    val focusRequester = remember { FocusRequester() }
+    
+    // Colors matching your app's yellow and brown theme
+    val pageBg = Color(0xFFFED867) // Your app's yellow background
+    val textPrimary = Color(0xFF0F1931) // Dark text on yellow background
     val subText = Color(0xFF6B7280)
-    val accentGreen = Color(0xFF2ECC71)
+    val accentBrown = Color(0xFF7A4B00) // Your brown theme
     val accentRed = Color(0xFFEF4444)
     
     // Email validation function
@@ -52,7 +59,6 @@ fun LoginScreen(
     fun onSubmit() {
         if (isEmailValid) {
             isLoading = true
-            // Real Supabase authentication
         } else {
             showError = true
         }
@@ -62,21 +68,21 @@ fun LoginScreen(
     LaunchedEffect(isLoading) {
         if (isLoading) {
             try {
-                try {
-                    Supa.sendEmailOtp(email)
-                    isLoading = false
-                    onNavigateToOTP(email)
-                } catch (e: Exception) {
-                    isLoading = false
-                    errorMessage = e.message ?: "Failed to send OTP"
-                    showError = true
-                }
+                Supa.sendEmailOtp(email)
+                isLoading = false
+                onNavigateToOTP(email)
             } catch (e: Exception) {
                 isLoading = false
-                errorMessage = e.message ?: "An unexpected error occurred"
+                errorMessage = e.message ?: "Failed to send OTP"
                 showError = true
             }
         }
+    }
+    
+    // Autofocus the text field when screen loads to open keyboard
+    LaunchedEffect(Unit) {
+        delay(300) // Delay to ensure the screen is fully loaded and rendered
+        focusRequester.requestFocus()
     }
     
     Column(
@@ -87,140 +93,99 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Add safe space for status bar
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(60.dp))
         
-        // Logo/App Title
+        // Title - matching the image
         Text(
-            text = "Posturely",
+            text = "REGISTER",
             color = textPrimary,
-            fontSize = 36.sp,
+            fontSize = 32.sp,
             fontWeight = FontWeight.ExtraBold,
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(bottom = 16.dp)
         )
         
+        // Description text
         Text(
-            text = "Monitor and correct your posture",
-            color = subText,
+            text = "Please enter your valid email address. We will send you a 6-digit code to verify your account.",
+            color = textPrimary,
             fontSize = 16.sp,
             textAlign = TextAlign.Center,
+            lineHeight = 22.sp,
             modifier = Modifier.padding(bottom = 48.dp)
         )
         
-        // Login Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        // Email Input Field - with your app's color theme
+        OutlinedTextField(
+            value = email,
+            onValueChange = { onEmailChange(it) },
+            placeholder = { Text("Enter your email", color = subText) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = accentBrown,
+                unfocusedBorderColor = accentBrown,
+                focusedTextColor = textPrimary,
+                unfocusedTextColor = textPrimary,
+                cursorColor = accentBrown,
+                focusedPlaceholderColor = subText,
+                unfocusedPlaceholderColor = subText,
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White
+            ),
+            shape = RoundedCornerShape(12.dp)
+        )
+        
+        // Error message
+        if (showError && !isEmailValid) {
+            Text(
+                text = "Please enter a valid email address",
+                color = accentRed,
+                fontSize = 14.sp,
+                modifier = Modifier
+                    .padding(top = 12.dp)
+                    .align(Alignment.Start)
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(32.dp))
+        
+        // Submit Button - using your brown theme
+        Button(
+            onClick = { onSubmit() },
+            enabled = isEmailValid && !isLoading,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = accentBrown,
+                disabledContainerColor = subText
+            )
         ) {
-            Column(
-                modifier = Modifier.padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Welcome Back",
-                    color = textPrimary,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
                 )
-                
+            } else {
                 Text(
-                    text = "Sign in to continue tracking your posture",
-                    color = subText,
-                    fontSize = 14.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(bottom = 32.dp)
-                )
-                
-                // Email Input
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { onEmailChange(it) },
-                    label = { Text("Email Address") },
-                    placeholder = { Text("Enter your email") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = if (isEmailValid) accentGreen else accentRed,
-                        unfocusedBorderColor = if (showError) accentRed else subText,
-                        focusedLabelColor = if (isEmailValid) accentGreen else accentRed
-                    ),
-                    isError = showError && !isEmailValid
-                )
-                
-                // Error message
-                if (showError) {
-                    Text(
-                        text = if (!isEmailValid) "Please enter a valid email address" else errorMessage,
-                        color = accentRed,
-                        fontSize = 12.sp,
-                        modifier = Modifier
-                            .padding(top = 8.dp)
-                            .align(Alignment.Start)
-                    )
-                }
-                
-                // Success message
-                if (isEmailValid && email.isNotEmpty()) {
-                    Text(
-                        text = "✓ Valid email address",
-                        color = accentGreen,
-                        fontSize = 12.sp,
-                        modifier = Modifier
-                            .padding(top = 8.dp)
-                            .align(Alignment.Start)
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(32.dp))
-                
-                // Submit Button
-                Button(
-                    onClick = { onSubmit() },
-                    enabled = isEmailValid && !isLoading,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isEmailValid) accentGreen else subText
-                    )
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Text(
-                            text = "Continue",
-                            color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Info text
-                Text(
-                    text = "We'll send you a verification code",
-                    color = subText,
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Center
+                    text = "SUBMIT",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
         
         Spacer(modifier = Modifier.weight(1f))
         
-        // Footer
+        // Footer text
         Text(
-            text = "By continuing, you agree to our Terms of Service and Privacy Policy",
+            text = "Posture insights are wellness guidance, not medical advice.",
             color = subText,
             fontSize = 12.sp,
             textAlign = TextAlign.Center,

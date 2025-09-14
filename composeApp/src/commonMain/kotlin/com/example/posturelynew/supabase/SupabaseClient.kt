@@ -165,10 +165,19 @@ object Supa {
 
     suspend fun getWeeksProgress(userEmail: String): Map<String, Any> {
         val todayMillis = DateTime.getCurrentTimeInMilliSeconds()
-        val weekStartMillis = todayMillis - 6L * 24L * 60L * 60L * 1000L // 7 days ago
+        val todayDateRaw = DateTime.formatTimeStamp(todayMillis, "yyyy-MM-dd")
+        val todayYear = todayDateRaw.substring(0, 4)
         
-        val weekStartDate = DateTime.formatTimeStamp(weekStartMillis, "yyyy-MM-dd")
-        val todayDate = DateTime.formatTimeStamp(todayMillis, "yyyy-MM-dd")
+        // Normalize to 2025 for day-of-week math (stable Monday baseline) then restore original year for DB keys
+        val normalizedTodayDate = "2025" + todayDateRaw.substring(4)
+        val normalizedTodayMillis = DateTime.getDateInMilliSeconds(normalizedTodayDate, "yyyy-MM-dd")
+        val dayIndex = getDayOfWeek(normalizedTodayDate) // 0=Mon..6=Sun using normalized calendar
+        val weekStartMillisNormalized = normalizedTodayMillis - dayIndex * 24L * 60L * 60L * 1000L
+        val weekStartDateNormalized = DateTime.formatTimeStamp(weekStartMillisNormalized, "yyyy-MM-dd")
+        val weekStartDate = todayYear + weekStartDateNormalized.substring(4)
+        val todayDate = todayDateRaw
+        
+        println("📅 Supabase: Week range: $weekStartDate to $todayDate")
         
         // Single query for all records in the date range
         val allRecords = try {
@@ -186,11 +195,12 @@ object Supa {
             emptyList()
         }
 
-        // Generate expected dates for the week
+        // Generate expected dates for the week (Monday to Sunday) using normalized baseline, then swap back to the original year
         val dates = (0..6).map { offset ->
-            val millis = todayMillis - offset * 24L * 60L * 60L * 1000L
-            DateTime.formatTimeStamp(millis, "yyyy-MM-dd")
-        }.reversed()
+            val millis = weekStartMillisNormalized + offset * 24L * 60L * 60L * 1000L
+            val normalized = DateTime.formatTimeStamp(millis, "yyyy-MM-dd") // 2025-..-..
+            todayYear + normalized.substring(4) // e.g., 2056-..-..
+        }
 
         if (allRecords.isEmpty()) {
             return mapOf(
@@ -218,6 +228,19 @@ object Supa {
             "scores" to perDayAvgScores,
             "dateOrder" to dates
         )
+    }
+    
+    // Helper function to get day of week from date string (yyyy-MM-dd)
+    // Returns 0=Monday, 1=Tuesday, ..., 6=Sunday
+    private fun getDayOfWeek(dateString: String): Int {
+        // Simple calculation based on known reference date
+        // Using 2024-01-01 as Monday (day 0)
+        val referenceDate = "2024-01-01" // This was a Monday
+        val referenceMillis = DateTime.getDateInMilliSeconds(referenceDate, "yyyy-MM-dd")
+        val targetMillis = DateTime.getDateInMilliSeconds(dateString, "yyyy-MM-dd")
+        
+        val daysDiff = (targetMillis - referenceMillis) / (24L * 60L * 60L * 1000L)
+        return ((daysDiff % 7) + 7).toInt() % 7 // Ensure positive result
     }
 
     suspend fun getMonthsProgress(userEmail: String): Map<String, Any> {

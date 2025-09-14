@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.asStateFlow
 data class ProgressData(
     val totalMinutes: Int = 0,
     val averageScore: Int = 0,
+    // Week aggregates
+    val weekTotalMinutes: Int = 0,
+    val weekAverageScore: Int = 0,
     val totalSamples: Int = 0,
     val bestScore: Int = 0,
     val worstScore: Int = 100,
@@ -69,25 +72,52 @@ class ProgressService {
             val monthMap = withTimeout(15000) { Supa.getMonthsProgress(userEmail) }
             val yearMap = withTimeout(15000) { Supa.getYearsProgress(userEmail) }
             
+            // Robust coercion helpers to avoid platform-specific type issues
+            fun anyToInt(value: Any?): Int = when (value) {
+                is Int -> value
+                is Long -> value.toInt()
+                is Double -> value.toInt()
+                is Float -> value.toInt()
+                is Number -> value.toInt()
+                is String -> value.toIntOrNull() ?: 0
+                else -> 0
+            }
+            fun mapAnyToIntMap(anyMap: Any?): Map<String, Int> {
+                val src = anyMap as? Map<*, *> ?: return emptyMap()
+                return src.entries.associate { (k, v) -> k.toString() to anyToInt(v) }
+            }
+            fun listAnyToStringList(anyList: Any?): List<String> {
+                val src = anyList as? List<*> ?: return emptyList()
+                return src.map { it.toString() }
+            }
+
+            val weekTotal = anyToInt(weekMap["totalMinutes"]) 
+            val weekAvg = anyToInt(weekMap["averageScore"]) 
+
             val progressData = ProgressData(
-                totalMinutes = weekMap["totalMinutes"] as? Int ?: 0,
-                averageScore = weekMap["averageScore"] as? Int ?: 0,
-                totalSamples = todayMap["totalSamples"] as? Int ?: 0,
-                bestScore = todayMap["bestScore"] as? Int ?: 0,
-                worstScore = todayMap["worstScore"] as? Int ?: 100,
-                goodMinutes = todayMap["goodMinutes"] as? Int ?: 0,
-                okMinutes = todayMap["okMinutes"] as? Int ?: 0,
-                badMinutes = todayMap["badMinutes"] as? Int ?: 0,
-                weekDays = (weekMap["days"] as? Map<String, Int>) ?: emptyMap(),
-                weekScores = (weekMap["scores"] as? Map<String, Int>) ?: emptyMap(),
-                weekOrder = (weekMap["dateOrder"] as? List<String>) ?: emptyList(),
-                monthWeeks = (monthMap["weeks"] as? Map<String, Int>) ?: emptyMap(),
-                monthWeekScores = (monthMap["scores"] as? Map<String, Int>) ?: emptyMap(),
-                monthWeekOrder = (monthMap["weekOrder"] as? List<String>) ?: emptyList(),
-                yearMonths = (yearMap["months"] as? Map<String, Int>) ?: emptyMap(),
-                yearMonthScores = (yearMap["scores"] as? Map<String, Int>) ?: emptyMap(),
-                yearMonthOrder = (yearMap["monthOrder"] as? List<String>) ?: emptyList()
+                totalMinutes = anyToInt(todayMap["totalMinutes"]),
+                averageScore = anyToInt(todayMap["averageScore"]),
+                weekTotalMinutes = weekTotal,
+                weekAverageScore = weekAvg,
+                totalSamples = anyToInt(todayMap["totalSamples"]),
+                bestScore = anyToInt(todayMap["bestScore"]),
+                worstScore = anyToInt(todayMap["worstScore"]),
+                goodMinutes = anyToInt(todayMap["goodMinutes"]),
+                okMinutes = anyToInt(todayMap["okMinutes"]),
+                badMinutes = anyToInt(todayMap["badMinutes"]),
+                weekDays = mapAnyToIntMap(weekMap["days"]),
+                weekScores = mapAnyToIntMap(weekMap["scores"]),
+                weekOrder = listAnyToStringList(weekMap["dateOrder"]),
+                monthWeeks = mapAnyToIntMap(monthMap["weeks"]),
+                monthWeekScores = mapAnyToIntMap(monthMap["scores"]),
+                monthWeekOrder = listAnyToStringList(monthMap["weekOrder"]),
+                yearMonths = mapAnyToIntMap(yearMap["months"]),
+                yearMonthScores = mapAnyToIntMap(yearMap["scores"]),
+                yearMonthOrder = listAnyToStringList(yearMap["monthOrder"])
             )
+            
+            println("🔍 ProgressService: Raw todayMap data: $todayMap")
+            println("🔍 ProgressService: Mapped progressData - totalMinutes: ${progressData.totalMinutes}, averageScore: ${progressData.averageScore}")
             
             _progressData.value = progressData
             println("✅ ProgressService: Progress updated - ${progressData.totalMinutes} minutes, avg: ${progressData.averageScore}, samples: ${progressData.totalSamples}")

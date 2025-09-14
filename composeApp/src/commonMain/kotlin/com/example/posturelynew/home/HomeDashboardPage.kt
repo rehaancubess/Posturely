@@ -146,6 +146,7 @@ data class SessionSummary(
     val averageScore: Int
 )
 
+@OptIn(ExperimentalResourceApi::class)
 @Composable
 fun DeviceOptionCard(
     icon: DrawableResource,
@@ -155,37 +156,43 @@ fun DeviceOptionCard(
     cardHeight: Dp = 150.dp,
     onClick: () -> Unit
 ) {
+    val accentBrown = Color(0xFF7A4B00)
+    val textPrimary = Color(0xFF0F1931)
+    
     Card(
         modifier = Modifier
             .width(cardWidth)
             .height(cardHeight),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = if (selected) Color(0xFF7A4B00) else Color(0xFFFFF0C0)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) accentBrown else Color(0xFFFFF0C0)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (selected) 4.dp else 2.dp),
         onClick = onClick
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()
-                .padding(16.dp),
+                .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // Use proper asset icon
             Image(
                 painter = painterResource(icon),
                 contentDescription = label,
                 modifier = Modifier
-                    .size(64.dp)
-                    .padding(bottom = 8.dp),
+                    .size(48.dp)
+                    .padding(bottom = 12.dp),
                 contentScale = ContentScale.Fit,
-                colorFilter = if (selected) androidx.compose.ui.graphics.ColorFilter.tint(Color.White) else null
+                colorFilter = if (selected) androidx.compose.ui.graphics.ColorFilter.tint(Color.White) else androidx.compose.ui.graphics.ColorFilter.tint(accentBrown)
             )
             Text(
                 text = label,
-                fontSize = 14.sp,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                color = if (selected) Color.White else Color.Black,
+                fontSize = 16.sp,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+                color = if (selected) Color.White else textPrimary,
                 textAlign = TextAlign.Center
             )
         }
@@ -265,6 +272,11 @@ fun HomeDashboardPage(
     // Collect progress data
     val progressData by progressService.progressData.collectAsState()
     val isProgressLoading by progressService.isLoading.collectAsState()
+    
+    // Debug progress data
+    LaunchedEffect(progressData) {
+        println("🔍 HomeDashboard: Progress data updated - totalMinutes: ${progressData.totalMinutes}, averageScore: ${progressData.averageScore}, samples: ${progressData.totalSamples}")
+    }
     val audioPlayer = rememberAudioPlayer()
     var isAudioSequencePlaying by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -277,6 +289,10 @@ fun HomeDashboardPage(
             // Load initial progress data when screen loads
             println("📊 HomeDashboard: Loading initial progress data")
             progressService.startProgressTracking(userEmail)
+            
+            // Immediately refresh to ensure data is loaded
+            println("📊 HomeDashboard: Refreshing progress data immediately")
+            progressService.refreshProgress()
             
             // Set up progress update callback
             postureDataService.setProgressUpdateCallback {
@@ -604,21 +620,34 @@ fun HomeDashboardPage(
                 ) { selectedSource = null },
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-        // Top section with header and tracking status
-        Column {
-            // Header
-            if (!monitoring) {
-                // Add spacing to bring header lower when not tracking
-                Spacer(modifier = Modifier.height(40.dp * vScale))
-                
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text("Hello", color = textPrimary, fontSize = 48.sp, fontWeight = FontWeight.ExtraBold)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Improve your posture by tracking it with", color = textPrimary, fontSize = 18.sp, fontWeight = FontWeight.Normal, textAlign = TextAlign.Center)
-                }
-            } else {
+         // Top section with header and tracking status
+         Column {
+             // Header with improved spacing
+             if (!monitoring) {
+                 // Add spacing to bring header lower when not tracking
+                 Spacer(modifier = Modifier.height(60.dp * vScale))
+                 
+                 Column(
+                     horizontalAlignment = Alignment.CenterHorizontally,
+                     modifier = Modifier.padding(horizontal = 24.dp * hScale)
+                 ) {
+                     Text(
+                         "Hello", 
+                         color = textPrimary, 
+                         fontSize = 48.sp, 
+                         fontWeight = FontWeight.ExtraBold
+                     )
+                     Spacer(modifier = Modifier.height(12.dp * vScale))
+                     Text(
+                         "Improve your posture by tracking it with", 
+                         color = textPrimary, 
+                         fontSize = 18.sp, 
+                         fontWeight = FontWeight.Normal, 
+                         textAlign = TextAlign.Center,
+                         lineHeight = 24.sp
+                     )
+                 }
+             } else {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -662,81 +691,113 @@ fun HomeDashboardPage(
 
         // Not tracking UI
         if (!monitoring) {
-            Spacer(modifier = Modifier.height(20.dp * vScale))
+             Spacer(modifier = Modifier.height(32.dp * vScale))
 
-            // Device tracking options with responsive sizing (like Flutter's MediaQuery)
-            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                val spacing = 12.dp
-                val cardWidth = ((maxWidth - spacing * 2) / 3f).coerceIn(110.dp, 160.dp)
-                val cardHeight = (cardWidth * 1.15f)
+             // Device tracking options with improved responsive spacing
+             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                 val screenWidth = maxWidth
+                 val availableWidth = screenWidth - (32.dp * hScale) // Account for horizontal padding
+                 val spacing = 16.dp * hScale
+                 val cardCount = if (getPlatformName() == "iOS") 3 else 2
+                 val cardWidth = ((availableWidth - spacing * (cardCount - 1)) / cardCount).coerceIn(100.dp, 140.dp)
+                 val cardHeight = (cardWidth * 1.2f)
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(spacing, Alignment.CenterHorizontally)
-                ) {
-                    // Phone option
-                    DeviceOptionCard(
-                        icon = Res.drawable.phone,
-                        label = "Phone",
-                        selected = selectedSource == "Phone",
-                        cardWidth = cardWidth,
-                        cardHeight = cardHeight,
-                        onClick = {
-                            selectedSource = "Phone"
-                        }
-                    )
-                    
-                    // Laptop option
-                    DeviceOptionCard(
-                        icon = Res.drawable.laptop,
-                        label = "Laptop",
-                        selected = selectedSource == "Laptop",
-                        cardWidth = cardWidth,
-                        cardHeight = cardHeight,
-                        onClick = { 
-                            selectedSource = "Laptop"
-                        }
-                    )
-                    
-                    // AirPods option - iOS only
-                    if (getPlatformName() == "iOS") {
-                        DeviceOptionCard(
-                            icon = Res.drawable.airpods,
-                            label = "AirPods",
-                            selected = selectedSource == "AirPods",
-                            cardWidth = cardWidth,
-                            cardHeight = cardHeight,
-                            onClick = { 
-                                selectedSource = "AirPods"
-                            }
-                        )
-                    }
-                }
-            }
+                 Row(
+                     modifier = Modifier.fillMaxWidth(),
+                     horizontalArrangement = Arrangement.spacedBy(spacing, Alignment.CenterHorizontally)
+                 ) {
+                     // Phone option
+                     DeviceOptionCard(
+                         icon = Res.drawable.phone,
+                         label = "Phone",
+                         selected = selectedSource == "Phone",
+                         cardWidth = cardWidth,
+                         cardHeight = cardHeight,
+                         onClick = {
+                             selectedSource = "Phone"
+                         }
+                     )
+                     
+                     // Laptop option
+                     DeviceOptionCard(
+                         icon = Res.drawable.laptop,
+                         label = "Laptop",
+                         selected = selectedSource == "Laptop",
+                         cardWidth = cardWidth,
+                         cardHeight = cardHeight,
+                         onClick = { 
+                             selectedSource = "Laptop"
+                         }
+                     )
+                     
+                     // AirPods option - iOS only
+                     if (getPlatformName() == "iOS") {
+                         DeviceOptionCard(
+                             icon = Res.drawable.airpods,
+                             label = "AirPods",
+                             selected = selectedSource == "AirPods",
+                             cardWidth = cardWidth,
+                             cardHeight = cardHeight,
+                             onClick = { 
+                                 selectedSource = "AirPods"
+                             }
+                         )
+                     }
+                 }
+             }
 
-            Spacer(modifier = Modifier.height(60.dp * vScale))
+            Spacer(modifier = Modifier.height(48.dp * vScale))
 
-            Box(
-                modifier = Modifier.fillMaxWidth()
+            // Start tracking button with improved spacing
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Button(
-                        onClick = {
-                            if (selectedSource == null) {
-                                showDeviceSelectionError = true
-                                shouldShake = true
-                                scope.launch {
-                                    delay(3000) // Hide error after 3 seconds
-                                    showDeviceSelectionError = false
-                                }
-                            } else {
+                // Error message above button
+                if (showDeviceSelectionError) {
+                    Text(
+                        text = "Pick the device you want to track with",
+                        color = Color(0xFFEF4444),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp * hScale)
+                            .padding(bottom = 16.dp * vScale)
+                    )
+                }
+                
+                Button(
+                    onClick = {
+                        if (selectedSource == null) {
+                            showDeviceSelectionError = true
+                            shouldShake = true
+                            scope.launch {
+                                delay(3000) // Hide error after 3 seconds
                                 showDeviceSelectionError = false
-                                when (selectedSource) {
-                                    "Phone" -> {
-                                        monitoringSource = "Phone"
+                            }
+                        } else {
+                            showDeviceSelectionError = false
+                            when (selectedSource) {
+                                "Phone" -> {
+                                    monitoringSource = "Phone"
+                                    monitoring = true
+                                    isAudioSequencePlaying = true
+                                    audioPlayer.playAudioSequence()
+                                    scope.launch {
+                                        delay(14000)
+                                        isAudioSequencePlaying = false
+                                    }
+                                }
+                                "Laptop" -> {
+                                    onNavigateToLaptopTracking?.invoke()
+                                }
+                                "AirPods" -> {
+                                    airPodsConnected = airPodsTracker.isConnected()
+                                    if (airPodsConnected) {
+                                        // Immediately start tracking; iOS will present motion alert if needed
+                                        monitoringSource = "AirPods"
                                         monitoring = true
                                         isAudioSequencePlaying = true
                                         audioPlayer.playAudioSequence()
@@ -744,57 +805,25 @@ fun HomeDashboardPage(
                                             delay(14000)
                                             isAudioSequencePlaying = false
                                         }
-                                    }
-                                    "Laptop" -> {
-                                        onNavigateToLaptopTracking?.invoke()
-                                    }
-                                    "AirPods" -> {
-                                        airPodsConnected = airPodsTracker.isConnected()
-                                        if (airPodsConnected) {
-                                            // Immediately start tracking; iOS will present motion alert if needed
-                                            monitoringSource = "AirPods"
-                                            monitoring = true
-                                            isAudioSequencePlaying = true
-                                            audioPlayer.playAudioSequence()
-                                            scope.launch {
-                                                delay(14000)
-                                                isAudioSequencePlaying = false
-                                            }
-                                        } else {
-                                            showAirPodsAlert = true
-                                        }
+                                    } else {
+                                        showAirPodsAlert = true
                                     }
                                 }
                             }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .offset(x = shakeOffset.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = accentBrown),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Text(
-                            text = if (selectedSource == "Laptop") "How it Works" else "Start Tracking",
-                            color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-                
-                // Error message overlay - positioned above the button without affecting layout
-                if (showDeviceSelectionError) {
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp * vScale)
+                        .offset(x = shakeOffset.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = accentBrown),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
                     Text(
-                        text = "Pick the device you want to track with",
-                        color = Color.Red,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .offset(y = (-40).dp)
-                            .padding(horizontal = 16.dp),
-                        textAlign = TextAlign.Center
+                        text = if (selectedSource == "Laptop") "How it Works" else "Start Tracking",
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }

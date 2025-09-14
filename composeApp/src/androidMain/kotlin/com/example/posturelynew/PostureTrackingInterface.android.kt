@@ -57,16 +57,22 @@ class AndroidPostureTrackingInterface : PostureTrackingInterface {
             currentLandmarks.clear()
             landmarkCount = 0
             
+            Log.d("AndroidPostureTracking", "Starting tracking - context: ${context != null}, lifecycle: ${lifecycleOwner != null}")
+            
             // Initialize native Android services if context is available
             if (context != null && lifecycleOwner != null) {
                 try {
+                    Log.d("AndroidPostureTracking", "Initializing PostureTrackingManager")
                     postureTrackingManager = PostureTrackingManager(context!!)
                     postureTrackingManager?.startPostureTracking(lifecycleOwner!!)
+                    Log.d("AndroidPostureTracking", "PostureTrackingManager started successfully")
                 } catch (e: Exception) {
+                    Log.e("AndroidPostureTracking", "Error starting PostureTrackingManager: ${e.message}")
                     // Fallback to simulation
                     simulatePoseDetection()
                 }
             } else {
+                Log.w("AndroidPostureTracking", "Context or lifecycle not available, using simulation")
                 // Fallback to simulation if context is not available
                 simulatePoseDetection()
             }
@@ -136,8 +142,11 @@ class AndroidPostureTrackingInterface : PostureTrackingInterface {
     override fun getLandmarkCount(): Int {
         // Try to get data from native services first, fallback to local state
         return try {
-            PoseDataBridge.getLandmarkCount()
+            val count = PoseDataBridge.getLandmarkCount()
+            Log.d("AndroidPostureTracking", "Got landmark count from bridge: $count")
+            count
         } catch (e: Exception) {
+            Log.w("AndroidPostureTracking", "Failed to get landmark count from bridge, using local: $landmarkCount", e)
             landmarkCount
         }
     }
@@ -145,8 +154,11 @@ class AndroidPostureTrackingInterface : PostureTrackingInterface {
     override fun getLandmarkX(index: Int): Float {
         // Try to get data from native services first, fallback to local state
         return try {
-            PoseDataBridge.getLandmarkX(index)
+            val x = PoseDataBridge.getLandmarkX(index)
+            if (index == 0) Log.d("AndroidPostureTracking", "Got landmark X from bridge: index=$index, x=$x")
+            x
         } catch (e: Exception) {
+            Log.w("AndroidPostureTracking", "Failed to get landmark X from bridge, using local", e)
             if (index >= 0 && index < currentLandmarks.size) {
                 currentLandmarks[index].first
             } else {
@@ -158,8 +170,11 @@ class AndroidPostureTrackingInterface : PostureTrackingInterface {
     override fun getLandmarkY(index: Int): Float {
         // Try to get data from native services first, fallback to local state
         return try {
-            PoseDataBridge.getLandmarkY(index)
+            val y = PoseDataBridge.getLandmarkY(index)
+            if (index == 0) Log.d("AndroidPostureTracking", "Got landmark Y from bridge: index=$index, y=$y")
+            y
         } catch (e: Exception) {
+            Log.w("AndroidPostureTracking", "Failed to get landmark Y from bridge, using local", e)
             if (index >= 0 && index < currentLandmarks.size) {
                 currentLandmarks[index].second
             } else {

@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.launch
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -41,6 +42,9 @@ fun StatsScreen() {
     val userEmail = storage.getString("userEmail", "")
     val progressService = remember { ProgressService() }
     val progressData by progressService.progressData.collectAsState()
+    
+    // Coroutine scope for refresh button
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(userEmail) {
         if (userEmail.isNotEmpty()) {
@@ -58,7 +62,11 @@ fun StatsScreen() {
     } else 0f
     
     // Average score for the donut chart
-    val averageScore = progressData.averageScore.takeIf { it > 0 } ?: 0
+    val averageScore = if (selectedRange == 0) {
+        progressData.weekAverageScore.takeIf { it > 0 } ?: 0
+    } else {
+        progressData.averageScore.takeIf { it > 0 } ?: 0
+    }
     val averageScorePercent = (averageScore / 100f).coerceIn(0f, 1f)
     
     // Check if month or year view should show nostats (temporarily disabled)
@@ -71,17 +79,46 @@ fun StatsScreen() {
             .background(pageBg)
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
-        // Title
-        Text(
-            text = "Stats",
-            color = textPrimary,
-            fontSize = 40.sp,
-            fontWeight = FontWeight.ExtraBold,
+        // Title with refresh button
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 8.dp, bottom = 16.dp),
-            textAlign = TextAlign.Center
-        )
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Empty space to balance the layout
+            Spacer(modifier = Modifier.width(60.dp))
+            
+            Text(
+                text = "Stats",
+                color = textPrimary,
+                fontSize = 40.sp,
+                fontWeight = FontWeight.ExtraBold,
+                textAlign = TextAlign.Center
+            )
+            
+            // Refresh button
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(cardBg, CircleShape)
+                    .clickable { 
+                        // Trigger refresh in coroutine scope
+                        scope.launch {
+                            progressService.refreshProgress()
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "↻",
+                    color = textPrimary,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
 
         // Range tabs
         Row(
@@ -149,7 +186,7 @@ fun StatsScreen() {
 
                     Spacer(Modifier.height(16.dp))
 
-                    // Simple line chart with fake weekly trend derived from progress
+                    // Weekly trend from real data, zero-filled if empty
                     LineChart(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -158,7 +195,7 @@ fun StatsScreen() {
                     )
                     Spacer(Modifier.height(8.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        listOf("S","M","T","W","T","F","S").forEach { d ->
+                        listOf("M","T","W","T","F","S","S").forEach { d ->
                             Text(d, color = textPrimary.copy(alpha = 0.9f), fontSize = 12.sp)
                         }
                     }
@@ -175,14 +212,14 @@ fun StatsScreen() {
             ) {
                 StatCard(
                     title = "Total Time",
-                    value = formatMinutes(progressData.totalMinutes),
+                    value = if (selectedRange == 0) formatMinutes(progressData.weekTotalMinutes) else formatMinutes(progressData.totalMinutes),
                     modifier = Modifier.weight(1f),
                     cardBg = cardBg,
                     textPrimary = textPrimary
                 )
                 StatCard(
                     title = "Average Score",
-                    value = (progressData.averageScore.takeIf { it > 0 } ?: 0).toString(),
+                    value = (if (selectedRange == 0) progressData.weekAverageScore.takeIf { it > 0 } ?: 0 else progressData.averageScore.takeIf { it > 0 } ?: 0).toString(),
                     modifier = Modifier.weight(1f),
                     cardBg = cardBg,
                     textPrimary = textPrimary
@@ -212,7 +249,7 @@ fun StatsScreen() {
                 Spacer(Modifier.height(6.dp))
                 // Labels under the bars based on selected range
                 val barLabels = when (selectedRange) {
-                    0 -> listOf("S","M","T","W","T","F","S")
+                    0 -> listOf("M","T","W","T","F","S","S")
                     1 -> listOf("W1","W2","W3","W4","W5")
                     else -> listOf("J","F","M","A","M","J","J","A","S","O","N","D")
                 }
@@ -346,29 +383,50 @@ private fun StatCard(
 }
 
 private fun formatMinutes(totalMinutes: Int): String {
-    if (totalMinutes <= 0) return "0h 0m"
+    if (totalMinutes <= 0) return "0m"
     val hours = totalMinutes / 60
     val minutes = totalMinutes % 60
-    return "${hours}h ${minutes}m"
+    return if (hours > 0) "${hours}h ${minutes}m" else "${minutes}m"
 }
 
 private fun generateWeeklyTrend(progressData: ProgressData): List<Float> {
-    // Use real weekly data from Supabase
     val weekOrder = progressData.weekOrder
     val weekScores = progressData.weekScores
-    
-    if (weekOrder.isEmpty() || weekScores.isEmpty()) {
-        // Fallback to mock data if no real data available
-        val base = (progressData.averageScore.takeIf { it > 0 } ?: 60).toFloat()
-        val goodBoost = (progressData.goodMinutes.coerceAtLeast(1)).toFloat() / 10f
-        val arr = listOf(30f, 35f, 40f, 42f, 60f + goodBoost, 58f, 65f)
-        return arr.map { (it + base / 10f).coerceAtMost(100f) }
+    if (weekOrder.isEmpty()) return List(7) { 0f }
+    return weekOrder
+        .sorted()
+        .map { original -> original to normalizeYear(original) }
+        .map { (original, normalized) ->
+            (weekScores[normalized] ?: weekScores[original] ?: 0).toFloat()
+        }
+}
+
+// Map yyyy-MM-dd weekOrder into short day labels matching local week
+private fun weekLabelsFromOrder(weekOrder: List<String>): List<String> {
+    if (weekOrder.isEmpty()) return listOf("M","T","W","T","F","S","S")
+    return weekOrder.sorted().map { dateStr ->
+        // Expect yyyy-MM-dd; derive day-of-week using DateTime helpers and the same reference used in SupabaseClient
+        val millis = DateTime.getDateInMilliSeconds(normalizeYear(dateStr), "yyyy-MM-dd")
+        val dayCode = DateTime.formatTimeStamp(millis, "EEE") // Mon, Tue, ...
+        when (dayCode.lowercase()) {
+            "mon" -> "M"
+            "tue" -> "T"
+            "wed" -> "W"
+            "thu" -> "T"
+            "fri" -> "F"
+            "sat" -> "S"
+            "sun" -> "S"
+            else -> ""
+        }
     }
-    
-    // Use real data in the correct order
-    return weekOrder.map { day ->
-        weekScores[day]?.toFloat() ?: 0f
-    }
+}
+
+// Supabase might send wrong year (e.g., 2056 instead of 2025). Normalize to 2025 for mapping keys.
+private fun normalizeYear(dateStr: String): String {
+    // yyyy-MM-dd
+    if (dateStr.length < 10) return dateStr
+    val year = dateStr.substring(0, 4)
+    return if (year != "2025") "2025" + dateStr.substring(4) else dateStr
 }
 
 private fun generateBars(progressData: ProgressData, range: Int): List<Float> {
@@ -378,17 +436,14 @@ private fun generateBars(progressData: ProgressData, range: Int): List<Float> {
             val weekOrder = progressData.weekOrder
             val weekDays = progressData.weekDays
             
-            if (weekOrder.isEmpty() || weekDays.isEmpty()) {
-                // Fallback to mock data
-                val total = progressData.totalMinutes.coerceAtLeast(0)
-                val base = (total / 7f).coerceAtLeast(1f)
-                listOf(0.8f, 0.6f, 0.7f, 0.75f, 1.2f, 1.0f, 0.9f).map { it * base }
-            } else {
-                // Use real data in the correct order
-                weekOrder.map { day ->
-                    weekDays[day]?.toFloat() ?: 0f
+            if (weekOrder.isEmpty()) return List(7) { 0f }
+            // Use real data in the correct order (zero-filled), checking normalized and original keys
+            weekOrder
+                .sorted()
+                .map { original -> original to normalizeYear(original) }
+                .map { (original, normalized) ->
+                    (weekDays[normalized] ?: weekDays[original] ?: 0).toFloat()
                 }
-            }
         }
         // Month: 5 bars (W1..W5) - temporarily disabled
         1 -> {

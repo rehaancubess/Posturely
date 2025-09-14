@@ -30,14 +30,28 @@ object PoseDataManager {
     
     fun getWorldLandmarks(): List<PoseLandmark> = currentWorldLandmarks
     
-    fun getLandmarkCount(): Int = currentLandmarks.size
+    fun getLandmarkCount(): Int {
+        val count = currentLandmarks.size
+        if (count > 0) {
+            Log.d("PoseDataManager", "Returning landmark count: $count")
+        }
+        return count
+    }
     
     fun getLandmarkX(index: Int): Float {
-        return if (index < currentLandmarks.size) currentLandmarks[index].x else 0.5f
+        val x = if (index < currentLandmarks.size) currentLandmarks[index].x else 0.5f
+        if (index == 0 && currentLandmarks.isNotEmpty()) {
+            Log.d("PoseDataManager", "Returning landmark X: index=$index, x=$x")
+        }
+        return x
     }
     
     fun getLandmarkY(index: Int): Float {
-        return if (index < currentLandmarks.size) currentLandmarks[index].y else 0.5f
+        val y = if (index < currentLandmarks.size) currentLandmarks[index].y else 0.5f
+        if (index == 0 && currentLandmarks.isNotEmpty()) {
+            Log.d("PoseDataManager", "Returning landmark Y: index=$index, y=$y")
+        }
+        return y
     }
     
     fun clearData() {

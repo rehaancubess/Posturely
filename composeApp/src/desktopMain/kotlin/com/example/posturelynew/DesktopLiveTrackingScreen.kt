@@ -181,12 +181,12 @@ fun DesktopLiveTrackingScreen(
                 
                 // Always try to collect landmarks and compute ratio
                 frameCount++
-                val newLandmarks = mutableListOf<Pair<Float, Float>>()
-                for (i in 0 until kotlin.math.min(landmarkCount, 33)) {
-                    val x = cameraService.getLandmarkX(i)
-                    val y = cameraService.getLandmarkY(i)
-                    newLandmarks.add(Pair(x, y))
-                }
+                    val newLandmarks = mutableListOf<Pair<Float, Float>>()
+                    for (i in 0 until kotlin.math.min(landmarkCount, 33)) {
+                        val x = cameraService.getLandmarkX(i)
+                        val y = cameraService.getLandmarkY(i)
+                        newLandmarks.add(Pair(x, y))
+                    }
 
                 var newRatioComputed = false
                 if (landmarkCount >= 33 && newLandmarks.size >= 33) {
@@ -277,11 +277,11 @@ fun DesktopLiveTrackingScreen(
                     shoulderAsymY = metrics.shoulderAsymY
 
                     smoothedScore = smoothScore(currentScore)
-
+                    
                     if (userEmail.isNotEmpty()) {
                         postureDataService.addPostureScore(smoothedScore)
                     }
-
+                    
                     println("🎯 Desktop live tracking update: ratio=${postureRatio.toString().take(5)}, score=$currentScore, smoothed=$smoothedScore, stuck=$isRatioStuck")
                 } else {
                     postureStatus = "Person not in frame"
@@ -387,7 +387,7 @@ fun DesktopLiveTrackingScreen(
             onToggleTracking()
         }
     }
-
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -395,17 +395,17 @@ fun DesktopLiveTrackingScreen(
             .padding(40.dp)
     ) {
         // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextButton(
-                    onClick = onBackPressed,
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TextButton(
+                onClick = onBackPressed,
                 colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
-                ) {
-                    Text("← Back", fontSize = 16.sp)
-                }
+            ) {
+                Text("← Back", fontSize = 16.sp)
+            }
             
             // Score and Status indicator
             Row(
@@ -507,9 +507,9 @@ fun DesktopLiveTrackingScreen(
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = accentBrown)
                     ) {
-                        Text(
+        Text(
                             if (isTracking) "Stop tracking" else "Start tracking",
-                            color = Color.White,
+            color = Color.White,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -529,57 +529,57 @@ fun DesktopLiveTrackingScreen(
         if (showAdvanced) {
         
         // Camera View
-            if (showCamera && cameraFrame != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
+        if (showCamera && cameraFrame != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
                     .height(400.dp)
-                        .background(Color.Black, RoundedCornerShape(12.dp))
+                    .background(Color.Black, RoundedCornerShape(12.dp))
                     .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        bitmap = cameraFrame!!,
-                        contentDescription = "Camera Feed",
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-            } else {
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    bitmap = cameraFrame!!,
+                    contentDescription = "Camera Feed",
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        } else {
             // Camera placeholder
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
                     .height(400.dp)
-                        .background(Color(0xFF2C2C2E), RoundedCornerShape(12.dp)),
-                    contentAlignment = Alignment.Center
+                    .background(Color(0xFF2C2C2E), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "📷",
+                    Text(
+                        text = "📷",
                         fontSize = 48.sp
-                        )
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Camera Not Active",
-                            color = Color.Gray,
+                    Text(
+                        text = "Camera Not Active",
+                        color = Color.Gray,
                         fontSize = 18.sp,
-                            fontWeight = FontWeight.Medium
-                        )
+                        fontWeight = FontWeight.Medium
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Use the buttons below to control camera and tracking",
                         color = Color.Gray,
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center
-                        )
-                    }
+                    )
                 }
             }
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
+        }
+        
+        Spacer(modifier = Modifier.height(32.dp))
+        
         // Ratio and Score Display - Side by Side
         Row(
             horizontalArrangement = Arrangement.Center,
@@ -588,7 +588,7 @@ fun DesktopLiveTrackingScreen(
         ) {
             if (isUserVisible && postureRatio > 0) {
                 // Ratio on the left
-                Text(
+            Text(
                     text = String.format("%.3f", postureRatio),
                     color = Color.White,
                     fontSize = 48.sp,
@@ -597,16 +597,16 @@ fun DesktopLiveTrackingScreen(
                 )
                 
                 // Score on the right
-                Text(
+            Text(
                     text = "$currentScore",
                     color = when {
                         currentScore >= 80 -> Color(0xFF28A745) // Green
                         currentScore >= 60 -> Color(0xFFFFA000) // Orange
                         else -> Color(0xFFEF4444) // Red
                     },
-                    fontSize = 48.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
+                fontSize = 48.sp,
+                fontWeight = FontWeight.ExtraBold
+            )
             } else {
                 Text(
                     text = "—",
@@ -652,8 +652,8 @@ fun DesktopLiveTrackingScreen(
         if (isTracking && postureRatio > 0) {
             Spacer(modifier = Modifier.height(32.dp))
             
-                Button(
-                    onClick = {
+            Button(
+                onClick = {
                         // Set current ratio as the "good" baseline
                         if (postureRatio > 0 && !postureRatio.isNaN()) {
                             calibratedRatio = postureRatio
@@ -662,30 +662,30 @@ fun DesktopLiveTrackingScreen(
                         } else {
                             println("❌ Cannot calibrate: Invalid ratio value")
                         }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    shape = RoundedCornerShape(24.dp),
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(24.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
-                ) {
-                    Text(
+            ) {
+                Text(
                     "🎯 Calibrate (Current Ratio = GOOD)",
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            
                 if (isRatioCalibrated) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
                     text = "✅ Calibrated ratio: ${String.format("%.3f", calibratedRatio)} (Current = GOOD)",
                     color = Color(0xFF28A745),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
@@ -735,25 +735,25 @@ fun DesktopLiveTrackingScreen(
                 )
             }
         }
-            
+        
         Spacer(modifier = Modifier.weight(1f))
-            
+        
         // Action Buttons
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                // Camera Status
-                Text(
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            // Camera Status
+            Text(
                 text = "🖥️ Desktop Camera Active",
                 color = Color(0xFF28A745),
-                    fontSize = 14.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                )
-                
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            )
+            
             // Section Title
             Text(
                 text = "Camera Controls",
@@ -764,33 +764,33 @@ fun DesktopLiveTrackingScreen(
             )
             
             // Camera Selection Button
-                Button(
-                    onClick = { 
+            Button(
+                onClick = {
                     cameraService.showCameraSelectionDialog { selectedIndex ->
                         println("Selected camera: $selectedIndex")
                         // Restart camera with new selection if it's running
                         if (showCamera) {
-                                cameraService.stopCamera()
-                                cameraService.startCamera { frame ->
-                                    cameraFrame = frame
-                                }
+                            cameraService.stopCamera()
+                            cameraService.startCamera { frame ->
+                                cameraFrame = frame
                             }
                         }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
                     .height(48.dp)
-                        .padding(bottom = 16.dp),
+                    .padding(bottom = 16.dp),
                 shape = RoundedCornerShape(24.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1))
-                ) {
-                    Text(
+            ) {
+                Text(
                     "📹 Select Camera: ${cameraService.getSelectedCameraName()}",
-                        color = Color.White,
+                    color = Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
-                    )
-                }
+                )
+            }
             
             // Camera Toggle Button
             Button(
@@ -799,21 +799,21 @@ fun DesktopLiveTrackingScreen(
                     if (showCamera) {
                         // Always restart camera when starting, regardless of tracking state
                         // Simulate exactly what happens when manually selecting camera index 0
-                            coroutineScope.launch {
-                                // First stop any existing camera completely
-                                cameraService.stopCamera()
-                                // Wait a moment for clean shutdown
-                                delay(200)
-                                // Then manually select camera index 0 (same as the dialog would do)
-                                cameraService.selectCameraIndex(0)
-                                // Wait a moment for the camera selection to take effect
-                                delay(100)
+                        coroutineScope.launch {
+                            // First stop any existing camera completely
+                            cameraService.stopCamera()
+                            // Wait a moment for clean shutdown
+                            delay(200)
+                            // Then manually select camera index 0 (same as the dialog would do)
+                            cameraService.selectCameraIndex(0)
+                            // Wait a moment for the camera selection to take effect
+                            delay(100)
                             // Finally start the camera with the selected index
-                                cameraService.startCamera { frame ->
-                                    cameraFrame = frame
-                                }
+                            cameraService.startCamera { frame ->
+                                cameraFrame = frame
                             }
-                        } else {
+                        }
+                    } else {
                         cameraService.stopCamera()
                     }
                 },
