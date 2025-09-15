@@ -27,6 +27,14 @@ class NotificationObserver: NSObject {
             name: NSNotification.Name("StopPostureTracking"),
             object: nil
         )
+
+        // Present native scan camera on demand (separate from background tracking)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(presentScanCamera),
+            name: NSNotification.Name("PresentScanCamera"),
+            object: nil
+        )
     }
     
     @objc private func startPostureTracking() {
@@ -78,6 +86,21 @@ class NotificationObserver: NSObject {
         backgroundPoseService?.stopDetection()
         backgroundCameraSession = nil
         backgroundPoseService = nil
+    }
+
+    // MARK: - Presentation of dedicated scan camera with overlay
+    @objc private func presentScanCamera() {
+        DispatchQueue.main.async {
+            guard let root = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .flatMap({ $0.windows })
+                .first(where: { $0.isKeyWindow })?.rootViewController else {
+                return
+            }
+            let controller = CameraViewController()
+            controller.modalPresentationStyle = .fullScreen
+            root.present(controller, animated: true)
+        }
     }
     
     deinit {

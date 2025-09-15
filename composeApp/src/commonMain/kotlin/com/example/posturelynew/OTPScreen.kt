@@ -14,6 +14,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import kotlinx.coroutines.delay
 import com.example.posturelynew.supabase.Supa
 
@@ -30,10 +32,14 @@ fun OTPScreen(
     var errorMessage by remember { mutableStateOf("") }
     var countdown by remember { mutableStateOf(30) }
     
-    val pageBg = Color(0xFFFFF9EA)
-    val textPrimary = Color(0xFF0F1931)
+    // Focus requester for autofocus
+    val focusRequester = remember { FocusRequester() }
+    
+    // Colors matching your app's yellow and brown theme
+    val pageBg = Color(0xFFFED867) // Your app's yellow background
+    val textPrimary = Color(0xFF0F1931) // Dark text on yellow background
     val subText = Color(0xFF6B7280)
-    val accentGreen = Color(0xFF2ECC71)
+    val accentBrown = Color(0xFF7A4B00) // Your brown theme
     val accentRed = Color(0xFFEF4444)
     
     // Countdown timer
@@ -42,6 +48,12 @@ fun OTPScreen(
             delay(1000)
             countdown--
         }
+    }
+    
+    // Autofocus the text field when screen loads to open keyboard
+    LaunchedEffect(Unit) {
+        delay(300) // Delay to ensure the screen is fully loaded and rendered
+        focusRequester.requestFocus()
     }
     
     // Handle OTP verification
@@ -86,7 +98,7 @@ fun OTPScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Add safe space for status bar
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(60.dp))
         
         // Back button
         Row(
@@ -103,151 +115,148 @@ fun OTPScreen(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Title
+        // Title - matching the email screen style
         Text(
-            text = "Verify OTP",
+            text = "VERIFY OTP",
             color = textPrimary,
             fontSize = 32.sp,
             fontWeight = FontWeight.ExtraBold,
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(bottom = 16.dp)
         )
         
+        // Description text - matching email screen style
         Text(
-            text = "Enter the 6-digit code sent to your email",
-            color = subText,
+            text = "Enter the 6-digit code sent to your email address to verify your account.",
+            color = textPrimary,
             fontSize = 16.sp,
             textAlign = TextAlign.Center,
+            lineHeight = 22.sp,
             modifier = Modifier.padding(bottom = 48.dp)
         )
         
-        // OTP Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        // OTP Input Field - with your app's color theme
+        OutlinedTextField(
+            value = otp,
+            onValueChange = { 
+                if (it.length <= 6) {
+                    otp = it
+                    showError = false
+                }
+            },
+            placeholder = { Text("Enter 6-digit code", color = subText) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = accentBrown,
+                unfocusedBorderColor = accentBrown,
+                focusedTextColor = textPrimary,
+                unfocusedTextColor = textPrimary,
+                cursorColor = accentBrown,
+                focusedPlaceholderColor = subText,
+                unfocusedPlaceholderColor = subText,
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White
+            ),
+            shape = RoundedCornerShape(12.dp)
+        )
+        
+        // Error message
+        if (showError && otp.length != 6) {
+            Text(
+                text = "Please enter a valid 6-digit OTP",
+                color = accentRed,
+                fontSize = 14.sp,
+                modifier = Modifier
+                    .padding(top = 12.dp)
+                    .align(Alignment.Start)
+            )
+        }
+        
+        // Error message for verification failure
+        if (showError && otp.length == 6 && errorMessage.isNotEmpty()) {
+            Text(
+                text = errorMessage,
+                color = accentRed,
+                fontSize = 14.sp,
+                modifier = Modifier
+                    .padding(top = 12.dp)
+                    .align(Alignment.Start)
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(32.dp))
+        
+        // Verify Button - using your brown theme
+        Button(
+            onClick = { verifyOTP() },
+            enabled = otp.length == 6 && !isLoading,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = accentBrown,
+                disabledContainerColor = subText
+            )
         ) {
-            Column(
-                modifier = Modifier.padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // OTP Input
-                OutlinedTextField(
-                    value = otp,
-                    onValueChange = { 
-                        if (it.length <= 6) {
-                            otp = it
-                            showError = false
-                        }
-                    },
-                    label = { Text("Enter OTP") },
-                    placeholder = { Text("000000") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = if (otp.length == 6) accentGreen else accentRed,
-                        unfocusedBorderColor = if (showError) accentRed else subText,
-                        focusedLabelColor = if (otp.length == 6) accentGreen else accentRed
-                    ),
-                    isError = showError && otp.length != 6
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
                 )
-                
-                // Error message
-                if (showError) {
-                    Text(
-                        text = if (otp.length != 6) "Please enter a valid 6-digit OTP" else errorMessage,
-                        color = accentRed,
-                        fontSize = 12.sp,
-                        modifier = Modifier
-                            .padding(top = 8.dp)
-                            .align(Alignment.Start)
-                    )
-                }
-                
-                // Success message
-                if (otp.length == 6) {
-                    Text(
-                        text = "✓ Valid OTP format",
-                        color = accentGreen,
-                        fontSize = 12.sp,
-                        modifier = Modifier
-                            .padding(top = 8.dp)
-                            .align(Alignment.Start)
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(32.dp))
-                
-                // Verify Button
-                Button(
-                    onClick = { verifyOTP() },
-                    enabled = otp.length == 6 && !isLoading,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (otp.length == 6) accentGreen else subText
-                    )
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Text(
-                            text = "Verify OTP",
-                            color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                // Resend OTP section
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+            } else {
+                Text(
+                    text = "VERIFY",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        // Resend OTP section
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Didn't receive the code?",
+                color = subText,
+                fontSize = 14.sp
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            if (countdown > 0) {
+                Text(
+                    text = "Resend in ${countdown}s",
+                    color = subText,
+                    fontSize = 14.sp
+                )
+            } else {
+                TextButton(
+                    onClick = { resendOTP() },
+                    colors = ButtonDefaults.textButtonColors(contentColor = accentBrown)
                 ) {
                     Text(
-                        text = "Didn't receive the code?",
-                        color = subText,
-                        fontSize = 14.sp
+                        text = "Resend OTP",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
                     )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    if (countdown > 0) {
-                        Text(
-                            text = "Resend in ${countdown}s",
-                            color = subText,
-                            fontSize = 14.sp
-                        )
-                    } else {
-                        TextButton(
-                            onClick = { resendOTP() },
-                            colors = ButtonDefaults.textButtonColors(contentColor = accentGreen)
-                        ) {
-                            Text(
-                                text = "Resend OTP",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                    }
                 }
             }
         }
         
         Spacer(modifier = Modifier.weight(1f))
         
-        // Footer
+        // Footer text - matching email screen style
         Text(
-            text = "The OTP will expire in 5 minutes",
+            text = "Posture insights are wellness guidance, not medical advice.",
             color = subText,
             fontSize = 12.sp,
             textAlign = TextAlign.Center,

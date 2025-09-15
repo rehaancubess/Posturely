@@ -28,7 +28,10 @@ class PoseLandmarkerService: NSObject {
         let options = PoseLandmarkerOptions()
         options.baseOptions.modelAssetPath = modelPath
         options.runningMode = .liveStream
-        // Remove custom confidence thresholds to use defaults like Android
+        // Increase detection confidence thresholds for more stable overlay
+        options.minPoseDetectionConfidence = 0.75
+        options.minPosePresenceConfidence = 0.75
+        options.minTrackingConfidence = 0.75
         options.poseLandmarkerLiveStreamDelegate = self
         
         do {

@@ -364,12 +364,9 @@ fun HomeScreen(
                     onTrackingStateChange = { active -> isTrackingActive = active }
                 )
             }
-            KeepAliveTab(visible = selectedTab == 1) {
-                StatsScreen()
-            }
-            KeepAliveTab(visible = selectedTab == 2) {
-                ProfileScreen(onLogout = onLogout)
-            }
+            KeepAliveTab(visible = selectedTab == 1) { ScanScreen() }
+            KeepAliveTab(visible = selectedTab == 2) { StatsScreen() }
+            KeepAliveTab(visible = selectedTab == 3) { ProfileScreen(onLogout = onLogout) }
         }
 
         // Fixed bottom navigation bar like screenshot
@@ -392,7 +389,7 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                listOf("Track", "Stats", "Profile").forEachIndexed { index, label ->
+                listOf("Track", "Scan", "Stats", "Profile").forEachIndexed { index, label ->
                     val isSelected = selectedTab == index
                     val iconTint = if (isSelected) selectedColor else unselected
                     Column(
@@ -421,6 +418,19 @@ fun HomeScreen(
                                 }
                             }
                             1 -> {
+                                // Scan icon - simple magnifying glass
+                                Canvas(modifier = Modifier.size(28.dp)) {
+                                    val w = size.width
+                                    val h = size.height
+                                    val radius = h * 0.28f
+                                    val center = androidx.compose.ui.geometry.Offset(w * 0.45f, h * 0.45f)
+                                    drawCircle(color = iconTint, radius = radius, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 5f), center = center)
+                                    val handleStart = androidx.compose.ui.geometry.Offset(center.x + radius * 0.7f, center.y + radius * 0.7f)
+                                    val handleEnd = androidx.compose.ui.geometry.Offset(w * 0.9f, h * 0.9f)
+                                    drawLine(color = iconTint, start = handleStart, end = handleEnd, strokeWidth = 5f)
+                                }
+                            }
+                            2 -> {
                                 // Stats icon - three slimmer filled bars (less filled)
                                 Canvas(modifier = Modifier.size(28.dp)) {
                                     val w = size.width
@@ -450,7 +460,7 @@ fun HomeScreen(
                                     )
                                 }
                             }
-                            2 -> {
+                            3 -> {
                                 // Profile icon - smaller head and slimmer shoulders (less filled)
                                 Canvas(modifier = Modifier.size(28.dp)) {
                                     val w = size.width

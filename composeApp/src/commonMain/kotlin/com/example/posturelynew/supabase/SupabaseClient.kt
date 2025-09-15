@@ -108,6 +108,14 @@ object Supa {
             false
         }
     }
+
+    // --- Lightweight helpers for platform bridges ---
+    fun currentAccessTokenOrEmpty(): String {
+        return try { client.auth.currentSessionOrNull()?.accessToken ?: "" } catch (_: Exception) { "" }
+    }
+    fun currentUserIdOrEmpty(): String {
+        return try { client.auth.currentSessionOrNull()?.user?.id ?: "" } catch (_: Exception) { "" }
+    }
     
     suspend fun insertPostureRecord(record: PostureRecord) {
         client.postgrest.from("posture_records").insert(record)
