@@ -91,3 +91,35 @@ actual class PlatformStorage {
         }
     }
 }
+
+actual fun openEmailClient(to: String, subject: String, body: String) {
+    try {
+        val desktop = java.awt.Desktop.getDesktop()
+        if (desktop.isSupported(java.awt.Desktop.Action.MAIL)) {
+            val mailto = "mailto:$to?subject=${java.net.URLEncoder.encode(subject, "UTF-8")}&body=${java.net.URLEncoder.encode(body, "UTF-8")}"
+            val uri = java.net.URI(mailto)
+            desktop.mail(uri)
+        } else {
+            println("🔧 [DESKTOP] Mail not supported on this system")
+        }
+    } catch (e: Exception) {
+        println("🔧 [DESKTOP] Failed to open email client: ${e.message}")
+    }
+}
+
+actual fun openUrl(url: String) {
+    try {
+        val desktop = java.awt.Desktop.getDesktop()
+        if (desktop.isSupported(java.awt.Desktop.Action.BROWSE)) {
+            val uri = java.net.URI(url)
+            desktop.browse(uri)
+        } else {
+            println("🔧 [DESKTOP] Browse not supported on this system")
+        }
+    } catch (e: Exception) {
+        println("🔧 [DESKTOP] Failed to open URL: ${e.message}")
+    }
+}
+
+actual fun requestPhoneTrackingPermissions() { /* no-op on desktop */ }
+actual fun requestAirPodsPermissions() { /* no-op on desktop */ }

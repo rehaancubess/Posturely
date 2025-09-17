@@ -80,6 +80,7 @@ class CameraViewController: UIViewController {
     private var flowStage = 0 // 0=find front, 1=find side after first countdown, 2=done
     private var countdownWorkItem: DispatchWorkItem?
     private var countdownPlayer: AVAudioPlayer?
+    private var instructionPlayer: AVAudioPlayer?
     private var countdownDuration: Double = 3.0
     private var authToken: String = ""
     private var userId: String = ""
@@ -107,6 +108,8 @@ class CameraViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         startCamera()
+        // Play initial instruction when page opens
+        playInstruction(named: "incamera")
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -461,19 +464,33 @@ class CameraViewController: UIViewController {
     }
 
     private func isFrontPoseVisible() -> Bool {
-        // Heuristic per observed values:
-        // - ShoulderWidth spike indicates person/front (typically 0.15–0.30)
-        // - Shoulders roughly level
-        // - At least one knee angle in 150°–180° range
+        // Require full body visibility - both shoulders AND knees must be in frame
+        // Check if knee landmarks are actually visible (not just calculated)
+        guard currentLandmarks.count >= 29 else { return false }
+        
         let ls = currentLandmarks[11]
         let rs = currentLandmarks[12]
+        let leftKnee = currentLandmarks[25]
+        let rightKnee = currentLandmarks[26]
+        
+        // Check if knees are actually in the camera frame (visibility > 0.5)
+        let leftKneeVisible = leftKnee.visibility > 0.5
+        let rightKneeVisible = rightKnee.visibility > 0.5
+        let kneesInFrame = leftKneeVisible || rightKneeVisible
+        
+        // Shoulder conditions
         let shoulderDx = abs(ls.x - rs.x)
         let shoulderDy = abs(ls.y - rs.y)
-        let shouldersOK = (shoulderDx > 0.15) && (shoulderDy < 0.06)
-        let leftKnee = kneeAngleDeg(hip: currentLandmarks[23], knee: currentLandmarks[25], ankle: currentLandmarks[27])
-        let rightKnee = kneeAngleDeg(hip: currentLandmarks[24], knee: currentLandmarks[26], ankle: currentLandmarks[28])
-        let kneeOK = (leftKnee >= 150 && leftKnee <= 185) || (rightKnee >= 150 && rightKnee <= 185)
-        return shouldersOK && kneeOK
+        let shouldersOK = (shoulderDx > 0.20) && (shoulderDy < 0.06)
+        
+        // Knee angle conditions (only if knees are visible)
+        let leftKneeAngle = kneeAngleDeg(hip: currentLandmarks[23], knee: currentLandmarks[25], ankle: currentLandmarks[27])
+        let rightKneeAngle = kneeAngleDeg(hip: currentLandmarks[24], knee: currentLandmarks[26], ankle: currentLandmarks[28])
+        let kneeOK = (leftKneeAngle >= 150 && leftKneeAngle <= 185) || (rightKneeAngle >= 150 && rightKneeAngle <= 185)
+        
+        print("[Scan] Front check: shouldersOK=\(shouldersOK), kneesInFrame=\(kneesInFrame), kneeOK=\(kneeOK)")
+        
+        return shouldersOK && kneesInFrame && kneeOK
     }
 
     private func kneeAngleDeg(hip: PoseLandmark, knee: PoseLandmark, ankle: PoseLandmark) -> Double {
@@ -526,6 +543,8 @@ class CameraViewController: UIViewController {
             if self.flowStage == 1 {
                 self.frontImageB64 = self.jpegBase64(image: image)
                 print("[Scan] Saved FRONT image (base64 length=\(self.frontImageB64?.count ?? 0))")
+                // Play instruction to turn to side after front capture
+                self.playInstruction(named: "turntoside")
             } else if self.flowStage == 2 {
                 self.sideImageB64 = self.jpegBase64(image: image)
                 print("[Scan] Saved SIDE image (base64 length=\(self.sideImageB64?.count ?? 0))")
@@ -562,16 +581,39 @@ class CameraViewController: UIViewController {
         }
     }
 
+    private func playInstruction(named basename: String) {
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try? session.setCategory(.playback, mode: .default)
+            try? session.setActive(true)
+
+            guard let audioURL = resolveAudioURL(basename: basename, ext: "mp3") else { return }
+            instructionPlayer?.stop()
+            instructionPlayer = try AVAudioPlayer(contentsOf: audioURL)
+            instructionPlayer?.numberOfLoops = 0
+            instructionPlayer?.prepareToPlay()
+            instructionPlayer?.play()
+        } catch {
+            // Ignore audio errors silently
+        }
+    }
+
     private func resolveAudioURL(basename: String, ext: String) -> URL? {
-        // Try common locations
+        // Try main app bundle typical locations
         if let u = Bundle.main.url(forResource: basename, withExtension: ext) { return u }
-        if let u = Bundle.main.url(forResource: "files/\(basename)", withExtension: ext) { return u }
         if let u = Bundle.main.url(forResource: "Sounds/\(basename)", withExtension: ext) { return u }
-        // Fallback: scan all bundle mp3s and match by filename
-        if let urls = Bundle.main.urls(forResourcesWithExtension: ext, subdirectory: nil) {
-            let lower = (basename + "." + ext).lowercased()
-            if let exact = urls.first(where: { $0.lastPathComponent.lowercased() == lower }) { return exact }
-            if let byBase = urls.first(where: { $0.deletingPathExtension().lastPathComponent.lowercased() == basename.lowercased() }) { return byBase }
+        if let u = Bundle.main.url(forResource: "files/\(basename)", withExtension: ext) { return u }
+
+        // Search across all loaded bundles and frameworks (in case KMP packs resources into a framework bundle)
+        let candidates = Bundle.allBundles + Bundle.allFrameworks
+        for b in candidates {
+            if let u = b.url(forResource: basename, withExtension: ext) { return u }
+            if let u = b.url(forResource: "files/\(basename)", withExtension: ext) { return u }
+            if let urls = b.urls(forResourcesWithExtension: ext, subdirectory: nil) {
+                let lower = (basename + "." + ext).lowercased()
+                if let exact = urls.first(where: { $0.lastPathComponent.lowercased() == lower }) { return exact }
+                if let byBase = urls.first(where: { $0.deletingPathExtension().lastPathComponent.lowercased() == basename.lowercased() }) { return byBase }
+            }
         }
         return nil
     }
@@ -611,7 +653,7 @@ class CameraViewController: UIViewController {
         base.draw(in: CGRect(origin: .zero, size: size))
         let ctx = UIGraphicsGetCurrentContext()
         ctx?.setStrokeColor(UIColor.green.cgColor)
-        ctx?.setLineWidth(6.0)
+        ctx?.setLineWidth(12.0)
         // Mapping from normalized (x,y) → portrait mirrored pixel space
         func pt(_ norm: CGPoint) -> CGPoint {
             let x = CGFloat(norm.y) * size.width

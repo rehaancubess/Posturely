@@ -173,9 +173,7 @@ fun DesktopLiveTrackingScreen(
                 // Log visibility changes
                 if (wasVisible != isUserVisible) {
                     if (isUserVisible) {
-                        println("✅ DesktopLiveTracking: Person is back in frame (landmarks: $landmarkCount)")
                     } else {
-                        println("❌ DesktopLiveTracking: Person is not in frame (landmarks: $landmarkCount)")
                     }
                 }
                 
@@ -209,10 +207,10 @@ fun DesktopLiveTrackingScreen(
                     if (ratioDifference < 0.002) { // tighter: require bigger change to count as movement
                         if (ratioStuckStartTime == 0L) {
                             ratioStuckStartTime = currentTime
-                            println("🔍 Frame $frameCount: Starting to track stuck ratio at $postureRatio")
+                            
                         } else if (currentTime - ratioStuckStartTime > 2000 && !isRatioStuck) {
                             isRatioStuck = true
-                            println("🚨 Frame $frameCount: Posture ratio stuck at $postureRatio for more than 2 seconds")
+                            
                         }
                         ratioChangeStreak = 0
                     } else {
@@ -222,7 +220,7 @@ fun DesktopLiveTrackingScreen(
                             if (isRatioStuck) {
                                 personReturnedMessage = "Welcome back! Person detected again"
                                 messageStartTime = currentTime
-                                println("🎉 Frame $frameCount: Person returned! Sustained ratio change from $lastPostureRatio to $postureRatio")
+                                
                             }
                             ratioStuckStartTime = 0L
                             isRatioStuck = false
@@ -236,7 +234,7 @@ fun DesktopLiveTrackingScreen(
                         ratioStuckStartTime = currentTime
                     } else if (currentTime - ratioStuckStartTime > 2000 && !isRatioStuck) {
                         isRatioStuck = true
-                        println("🚨 Frame $frameCount: No ratio updates for more than 2 seconds")
+                        
                     }
                     ratioChangeStreak = 0
                 }
@@ -282,7 +280,7 @@ fun DesktopLiveTrackingScreen(
                         postureDataService.addPostureScore(smoothedScore)
                     }
                     
-                    println("🎯 Desktop live tracking update: ratio=${postureRatio.toString().take(5)}, score=$currentScore, smoothed=$smoothedScore, stuck=$isRatioStuck")
+                    
                 } else {
                     postureStatus = "Person not in frame"
                     currentScore = 0
@@ -320,6 +318,10 @@ fun DesktopLiveTrackingScreen(
     val onToggleTracking: () -> Unit = {
         isTracking = !isTracking
         if (isTracking) {
+            // Start minute-level recording to Supabase (same as phone)
+            if (userEmail.isNotEmpty()) {
+                postureDataService.startRecording(userEmail, source = "laptop")
+            }
             if (!showCamera) {
                 showCamera = true
                 coroutineScope.launch {
@@ -349,7 +351,7 @@ fun DesktopLiveTrackingScreen(
                     if (postureRatio > 0 && !postureRatio.isNaN()) {
                         calibratedRatio = postureRatio
                         isRatioCalibrated = true
-                        println("🎯 Auto-calibrated ratio: $calibratedRatio (Current = GOOD)")
+                        
                     }
                 }
             } else {
@@ -369,7 +371,7 @@ fun DesktopLiveTrackingScreen(
                     if (postureRatio > 0 && !postureRatio.isNaN()) {
                         calibratedRatio = postureRatio
                         isRatioCalibrated = true
-                        println("🎯 Auto-calibrated ratio: $calibratedRatio (Current = GOOD)")
+                        
                     }
                 }
             }
@@ -378,6 +380,10 @@ fun DesktopLiveTrackingScreen(
             isAudioSequencePlaying = false
             showCountdown = false
             countdownValue = 0
+            // Stop recording when tracking stops
+            if (userEmail.isNotEmpty()) {
+                postureDataService.stopRecording()
+            }
         }
     }
 
@@ -658,9 +664,9 @@ fun DesktopLiveTrackingScreen(
                         if (postureRatio > 0 && !postureRatio.isNaN()) {
                             calibratedRatio = postureRatio
                             isRatioCalibrated = true
-                            println("🎯 Calibrated ratio: $calibratedRatio (Current = GOOD)")
+                            
                         } else {
-                            println("❌ Cannot calibrate: Invalid ratio value")
+                            
                         }
                 },
                 modifier = Modifier
@@ -767,7 +773,7 @@ fun DesktopLiveTrackingScreen(
             Button(
                 onClick = {
                     cameraService.showCameraSelectionDialog { selectedIndex ->
-                        println("Selected camera: $selectedIndex")
+                        
                         // Restart camera with new selection if it's running
                         if (showCamera) {
                             cameraService.stopCamera()
@@ -881,7 +887,7 @@ fun DesktopLiveTrackingScreen(
                         // Manually trigger a pose detection to test the system
                         val testImage = cameraService.getCurrentFrame()
                         if (testImage != null) {
-                            println("DesktopLiveTrackingScreen: Manually testing pose detection...")
+                            
                             // This will help debug if the issue is with frame processing
                         }
                     },

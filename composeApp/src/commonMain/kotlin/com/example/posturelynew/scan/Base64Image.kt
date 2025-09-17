@@ -1,19 +1,29 @@
 package com.example.posturelynew.scan
 
+import androidx.compose.foundation.Image
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.toComposeImageBitmap
-import kotlin.io.encoding.Base64
+import androidx.compose.ui.layout.ContentScale
 import kotlin.io.encoding.ExperimentalEncodingApi
-import org.jetbrains.skia.Image
+
+expect fun decodeBase64ToImageBitmap(base64: String): ImageBitmap?
 
 @OptIn(ExperimentalEncodingApi::class)
-fun decodeBase64ToImageBitmap(base64: String): ImageBitmap? {
-    return try {
-        val data = Base64.decode(base64)
-        val skImage = Image.makeFromEncoded(data)
-        skImage.toComposeImageBitmap()
-    } catch (_: Throwable) {
-        null
+@Composable
+fun Base64Image(
+    base64String: String,
+    modifier: Modifier = Modifier,
+    contentScale: ContentScale = ContentScale.Fit
+) {
+    val bitmap = decodeBase64ToImageBitmap(base64String)
+    if (bitmap != null) {
+        Image(
+            bitmap = bitmap,
+            contentDescription = null,
+            modifier = modifier,
+            contentScale = contentScale
+        )
     }
 }
 

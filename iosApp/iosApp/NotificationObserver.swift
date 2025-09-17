@@ -35,6 +35,14 @@ class NotificationObserver: NSObject {
             name: NSNotification.Name("PresentScanCamera"),
             object: nil
         )
+
+        // Request camera permission on demand from Kotlin
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(requestCameraPermission),
+            name: NSNotification.Name("RequestCameraPermission"),
+            object: nil
+        )
     }
     
     @objc private func startPostureTracking() {
@@ -100,6 +108,17 @@ class NotificationObserver: NSObject {
             let controller = CameraViewController()
             controller.modalPresentationStyle = .fullScreen
             root.present(controller, animated: true)
+        }
+    }
+
+    // MARK: - Camera permission request handler
+    @objc private func requestCameraPermission() {
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        switch status {
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { _ in }
+        default:
+            break
         }
     }
     

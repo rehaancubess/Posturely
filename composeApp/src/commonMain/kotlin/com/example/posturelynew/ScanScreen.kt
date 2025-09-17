@@ -19,6 +19,7 @@ import posturelynew.composeapp.generated.resources.Res
 import posturelynew.composeapp.generated.resources.scans
 import com.example.posturelynew.scan.ScanImagesBridge
 import com.example.posturelynew.scan.postPostureReport
+import com.example.posturelynew.openNativeScanCamera
 import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
@@ -26,12 +27,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.foundation.Image
-import com.example.posturelynew.scan.decodeBase64ToImageBitmap
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.layout.ContentScale
+import com.example.posturelynew.scan.Base64Image
+import kotlinx.coroutines.delay
 
 @Composable
-fun ScanScreen() {
+fun ScanScreen(
+    onNavigateToReports: () -> Unit = {}
+) {
     // Reuse app colors
     val pageBg = Color(0xFFFED867)
     val textPrimary = Color(0xFF0F1931)
@@ -42,6 +46,7 @@ fun ScanScreen() {
     var showPreview by remember { mutableStateOf(false) }
     var frontB64 by remember { mutableStateOf<String?>(null) }
     var sideB64 by remember { mutableStateOf<String?>(null) }
+    var showAnalyzing by remember { mutableStateOf(false) }
 
     // Ensure listener survives navigation and updates state when native posts images
     LaunchedEffect(Unit) {
@@ -110,7 +115,7 @@ fun ScanScreen() {
 
         Button(
             onClick = {
-                // Listen once for images from native (iOS) and then post to edge
+                // Use cross-platform bridge to open native scan camera
                 openNativeScanCamera()
             },
             modifier = Modifier
@@ -134,7 +139,7 @@ fun ScanScreen() {
                 .fillMaxWidth()
                 .height(56.dp)
                 .background(cardBg, RoundedCornerShape(20.dp))
-                .clickable { /* dummy */ },
+                .clickable { onNavigateToReports() },
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -147,12 +152,20 @@ fun ScanScreen() {
     }
 
     if (showPreview) {
-        val fImg = frontB64?.let { decodeBase64ToImageBitmap(it) }
-        val sImg = sideB64?.let { decodeBase64ToImageBitmap(it) }
         AlertDialog(
             onDismissRequest = { showPreview = false },
             confirmButton = {
-                TextButton(onClick = { showPreview = false }) { Text("Close") }
+                Button(
+                    onClick = {
+                        // Start analyzing flow
+                        showPreview = false
+                        showAnalyzing = true
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = accentBrown)
+                ) { Text("Analyze", color = Color.White, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPreview = false }) { Text("Cancel") }
             },
             title = { Text("Captured Images", color = textPrimary) },
             text = {
@@ -160,21 +173,61 @@ fun ScanScreen() {
                     Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("Front", color = textPrimary, fontWeight = FontWeight.SemiBold)
                         Spacer(Modifier.height(8.dp))
-                        if (fImg != null) {
-                            Image(bitmap = fImg, contentDescription = "Front", modifier = Modifier.fillMaxWidth().height(180.dp).rotate(90f))
-                        } else {
-                            Text("Front image unavailable", color = textPrimary)
-                        }
+                        frontB64?.let { front ->
+                            Base64Image(
+                                base64String = front,
+                                modifier = Modifier
+                                    .width(160.dp)
+                                    .height(240.dp)
+                                    .rotate(90f),
+                                contentScale = ContentScale.Fit
+                            )
+                        } ?: Text("Front image unavailable", color = textPrimary)
                     }
                     Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("Side", color = textPrimary, fontWeight = FontWeight.SemiBold)
                         Spacer(Modifier.height(8.dp))
-                        if (sImg != null) {
-                            Image(bitmap = sImg, contentDescription = "Side", modifier = Modifier.fillMaxWidth().height(180.dp).rotate(90f))
-                        } else {
-                            Text("Side image unavailable", color = textPrimary)
-                        }
+                        sideB64?.let { side ->
+                            Base64Image(
+                                base64String = side,
+                                modifier = Modifier
+                                    .width(160.dp)
+                                    .height(240.dp)
+                                    .rotate(90f),
+                                contentScale = ContentScale.Fit
+                            )
+                        } ?: Text("Side image unavailable", color = textPrimary)
                     }
+                }
+            },
+            containerColor = cardBg
+        )
+    }
+
+    if (showAnalyzing) {
+        // Auto-close after ~5 seconds and navigate to reports
+        LaunchedEffect(Unit) {
+            delay(5000)
+            showAnalyzing = false
+            onNavigateToReports()
+        }
+        AlertDialog(
+            onDismissRequest = { /* block dismiss while analyzing */ },
+            confirmButton = {},
+            title = { Text("Analyzing your posture", color = textPrimary, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    // Reuse the scans illustration image
+                    Image(
+                        painter = painterResource(Res.drawable.scans),
+                        contentDescription = "Analyzing",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    CircularProgressIndicator(color = accentBrown)
                 }
             },
             containerColor = cardBg

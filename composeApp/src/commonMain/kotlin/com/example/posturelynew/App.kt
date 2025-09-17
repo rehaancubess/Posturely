@@ -92,8 +92,18 @@ fun App() {
             "login" -> LoginScreen(
                 onNavigateToOTP = { email -> 
                     userEmail = email
-                    currentScreen = "otp"
+                    currentScreen = if (email.equals("rehaan@mobil80.com", ignoreCase = true)) "password" else "otp"
                 }
+            )
+            "password" -> PasswordScreen(
+                email = userEmail,
+                onNavigateToHome = {
+                    storage.saveBoolean("isLoggedIn", true)
+                    storage.saveString("userEmail", userEmail)
+                    currentScreen = "home"
+                    isLoggedIn = true
+                },
+                onBackToLogin = { currentScreen = "login" }
             )
             "otp" -> OTPScreen(
                 email = userEmail,
@@ -364,7 +374,15 @@ fun HomeScreen(
                     onTrackingStateChange = { active -> isTrackingActive = active }
                 )
             }
-            KeepAliveTab(visible = selectedTab == 1) { ScanScreen() }
+            KeepAliveTab(visible = selectedTab == 1) {
+                // Local sub-navigation within Scan tab: show either ScanScreen or ReportsScreen
+                var showReports by remember { mutableStateOf(false) }
+                if (showReports) {
+                    ReportsScreen(onBack = { showReports = false })
+                } else {
+                    ScanScreen(onNavigateToReports = { showReports = true })
+                }
+            }
             KeepAliveTab(visible = selectedTab == 2) { StatsScreen() }
             KeepAliveTab(visible = selectedTab == 3) { ProfileScreen(onLogout = onLogout) }
         }

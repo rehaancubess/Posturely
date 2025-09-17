@@ -3,6 +3,8 @@ package com.example.posturelynew
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -30,98 +32,158 @@ private val accentBrown = Color(0xFF7A4B00) // App brown color
 fun IntroScreen(
     onNavigateToLogin: () -> Unit
 ) {
-    Column(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(pageBg)
-            .padding(horizontal = 24.dp, vertical = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Top spacing for status bar
-        Spacer(modifier = Modifier.height(60.dp))
-        
-        // Horizontal logo
-        Image(
-            painter = painterResource(Res.drawable.logohorizontal),
-            contentDescription = "Posturely Logo",
-            modifier = Modifier
-                .height(200.dp)
-                .fillMaxWidth(),
-            contentScale = ContentScale.Fit
-        )
-        
-        Spacer(modifier = Modifier.height(40.dp))
-        
-        // Features list - following the UI style from the image
+        val isCompact = maxHeight < 640.dp
+        val isSmall = maxHeight < 560.dp
+        val logoHeight = when {
+            maxHeight < 560.dp -> 120.dp
+            maxHeight < 720.dp -> 160.dp
+            else -> 200.dp
+        }
+        val topSpace = if (isCompact) 16.dp else 40.dp
+        val midSpace = if (isCompact) 16.dp else 24.dp
+        val bottomSpace = if (isCompact) 24.dp else 32.dp
+        val featureSpacing = if (isCompact) 12.dp else 16.dp
+        val contentPaddingX = if (isCompact) 20.dp else 24.dp
+
+        // Typography scaling for smaller devices
+        val iconSizeSp = when {
+            isSmall -> 22.sp
+            isCompact -> 24.sp
+            else -> 28.sp
+        }
+        val titleSizeSp = when {
+            isSmall -> 14.sp
+            isCompact -> 15.sp
+            else -> 16.sp
+        }
+        val descSizeSp = when {
+            isSmall -> 12.sp
+            isCompact -> 13.sp
+            else -> 14.sp
+        }
+        val descLineHeightSp = when {
+            isSmall -> 18.sp
+            isCompact -> 19.sp
+            else -> 20.sp
+        }
+        val buttonHeight = if (isCompact) 52.dp else 56.dp
+        val footerSizeSp = if (isCompact) 11.sp else 12.sp
+
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            // Feature 1: Real-time Tracking
-            FeatureItem(
-                icon = "📱",
-                title = "Real-time Tracking",
-                description = "Monitor your posture continuously using your phone camera or AirPods sensors"
-            )
-            
-            // Feature 2: Gentle Reminders
-            FeatureItem(
-                icon = "🔔",
-                title = "Gentle Reminders",
-                description = "Get subtle notifications to adjust your posture without interrupting your work"
-            )
-            
-            // Feature 3: Progress Insights
-            FeatureItem(
-                icon = "📊",
-                title = "Progress Insights",
-                description = "View detailed statistics and trends to understand your posture habits over time"
-            )
-            
-            // Feature 4: Privacy First
-            FeatureItem(
-                icon = "🔒",
-                title = "Privacy First",
-                description = "All data stays on your device - no cloud storage, complete privacy protection"
-            )
-            
-            // Feature 5: Multiple Devices
-            FeatureItem(
-                icon = "💻",
-                title = "Multi-Device Support",
-                description = "Works seamlessly across phone, laptop, and AirPods for comprehensive tracking"
-            )
-        }
-        
-        Spacer(modifier = Modifier.height(40.dp))
-        
-        // Get Started button
-        Button(
-            onClick = onNavigateToLogin,
             modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = accentBrown)
+                .fillMaxSize()
+                .padding(WindowInsets.statusBars.asPaddingValues())
+                .padding(horizontal = contentPaddingX)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                "GET STARTED",
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
+            // Top spacing for status bar / larger screens
+            Spacer(modifier = Modifier.height(topSpace))
+
+            // Horizontal logo
+            Image(
+                painter = painterResource(Res.drawable.logohorizontal),
+                contentDescription = "Posturely Logo",
+                modifier = Modifier
+                    .height(logoHeight)
+                    .fillMaxWidth(),
+                contentScale = ContentScale.Fit
             )
+
+            Spacer(modifier = Modifier.height(midSpace))
+
+            // Features list - responsive spacing
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(featureSpacing)
+            ) {
+                FeatureItem(
+                    icon = "📱",
+                    title = "Real-time Tracking",
+                    description = "Monitor your posture continuously using your phone camera or AirPods sensors",
+                    iconSize = iconSizeSp,
+                    titleSize = titleSizeSp,
+                    descriptionSize = descSizeSp,
+                    descriptionLineHeight = descLineHeightSp
+                )
+                FeatureItem(
+                    icon = "🔔",
+                    title = "Gentle Reminders",
+                    description = "Get subtle notifications to adjust your posture without interrupting your work",
+                    iconSize = iconSizeSp,
+                    titleSize = titleSizeSp,
+                    descriptionSize = descSizeSp,
+                    descriptionLineHeight = descLineHeightSp
+                )
+                FeatureItem(
+                    icon = "📊",
+                    title = "Progress Insights",
+                    description = "View detailed statistics and trends to understand your posture habits over time",
+                    iconSize = iconSizeSp,
+                    titleSize = titleSizeSp,
+                    descriptionSize = descSizeSp,
+                    descriptionLineHeight = descLineHeightSp
+                )
+                FeatureItem(
+                    icon = "🔒",
+                    title = "Privacy First",
+                    description = "All data stays on your device - no cloud storage, complete privacy protection",
+                    iconSize = iconSizeSp,
+                    titleSize = titleSizeSp,
+                    descriptionSize = descSizeSp,
+                    descriptionLineHeight = descLineHeightSp
+                )
+                FeatureItem(
+                    icon = "💻",
+                    title = "Multi-Device Support",
+                    description = "Works seamlessly across phone, laptop, and AirPods for comprehensive tracking",
+                    iconSize = iconSizeSp,
+                    titleSize = titleSizeSp,
+                    descriptionSize = descSizeSp,
+                    descriptionLineHeight = descLineHeightSp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(midSpace))
+
+            // Get Started button
+            Button(
+                onClick = onNavigateToLogin,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(buttonHeight),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = accentBrown)
+            ) {
+                Text(
+                    "GET STARTED",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(bottomSpace))
+
+            // Footer text
+            Text(
+                text = "Posture insights are wellness guidance, not medical advice.",
+                color = textPrimary.copy(alpha = 0.6f),
+                fontSize = footerSizeSp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+
+            // Bottom inset spacing for devices with gesture nav
+            Spacer(modifier = Modifier.padding(WindowInsets.navigationBars.asPaddingValues()))
         }
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
-        // Footer text
-        Text(
-            text = "Posture insights are wellness guidance, not medical advice.",
-            color = textPrimary.copy(alpha = 0.6f),
-            fontSize = 12.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
     }
 }
 
@@ -129,7 +191,11 @@ fun IntroScreen(
 private fun FeatureItem(
     icon: String,
     title: String,
-    description: String
+    description: String,
+    iconSize: androidx.compose.ui.unit.TextUnit = 28.sp,
+    titleSize: androidx.compose.ui.unit.TextUnit = 16.sp,
+    descriptionSize: androidx.compose.ui.unit.TextUnit = 14.sp,
+    descriptionLineHeight: androidx.compose.ui.unit.TextUnit = 20.sp
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -138,7 +204,7 @@ private fun FeatureItem(
         // Simple brown icon
         Text(
             text = icon,
-            fontSize = 28.sp,
+            fontSize = iconSize,
             color = accentBrown,
             modifier = Modifier.padding(end = 20.dp)
         )
@@ -150,15 +216,15 @@ private fun FeatureItem(
             Text(
                 text = title,
                 color = textPrimary,
-                fontSize = 16.sp,
+                fontSize = titleSize,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 6.dp)
             )
             Text(
                 text = description,
                 color = textPrimary.copy(alpha = 0.7f),
-                fontSize = 14.sp,
-                lineHeight = 20.sp
+                fontSize = descriptionSize,
+                lineHeight = descriptionLineHeight
             )
         }
     }

@@ -45,15 +45,29 @@ fun DesktopApp() {
         "login" -> DesktopLoginScreen(
             onNavigateToOTP = { email ->
                 userEmail = email
-                isLoggedIn = true
-                currentScreen = "main"
-                
-                // Save login state
+                if (email.equals("rehaan@mobil80.com", ignoreCase = true)) {
+                    currentScreen = "password"
+                } else {
+                    // For desktop we treat OTP as direct login for now
+                    isLoggedIn = true
+                    currentScreen = "main"
+                    val storage = PlatformStorage()
+                    storage.saveBoolean("isLoggedIn", true)
+                    storage.saveString("userEmail", email)
+                    println("🔧 [DESKTOP] Saved login state for user: $email")
+                }
+            }
+        )
+        "password" -> PasswordScreen(
+            email = userEmail,
+            onNavigateToHome = {
                 val storage = PlatformStorage()
                 storage.saveBoolean("isLoggedIn", true)
-                storage.saveString("userEmail", email)
-                println("🔧 [DESKTOP] Saved login state for user: $email")
-            }
+                storage.saveString("userEmail", userEmail)
+                isLoggedIn = true
+                currentScreen = "main"
+            },
+            onBackToLogin = { currentScreen = "login" }
         )
         "main" -> DesktopMainScreen(
             onNavigateToLiveTracking = { currentScreen = "live_tracking" },

@@ -144,8 +144,7 @@ fun ProfileScreen(
                     openEmailClient("rehaancubes@gmail.com", subject = "Posturely Support", body = "")
                 }
                 ProfileMenuItem("Privacy Policy") {
-                    // TODO: Implement webview - temporarily disabled due to iOS compilation issues
-                    // For now, this could open external browser
+                    openUrl("https://www.posturely.app/privacypolicy")
                 }
                 ProfileMenuItem("Delete Account") {
                     showDeleteAccountDialog = true

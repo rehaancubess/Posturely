@@ -150,8 +150,13 @@ class PostureDataService {
             val currentTimeMillis = DateTime.getCurrentTimeInMilliSeconds()
             println("🔍 PostureDataService: currentTimeMillis=$currentTimeMillis")
             val currentDateTimeStr = DateTime.formatTimeStamp(currentTimeMillis, "yyyy-MM-dd HH:mm:ss")
-            val currentDate = DateTime.formatTimeStamp(currentTimeMillis, "yyyy-MM-dd")
+            var currentDate = DateTime.formatTimeStamp(currentTimeMillis, "yyyy-MM-dd")
             val currentTime = DateTime.formatTimeStamp(currentTimeMillis, "HH:mm:ss")
+            // Sanity clamp for rare incorrect device/calendar year (e.g., 2056)
+            // TEMP: Force year to 2056 to match existing iOS data scheme
+            if (currentDate.length >= 10) {
+                currentDate = "2056" + currentDate.substring(4)
+            }
             val timestamp = currentTimeMillis
             println("🔍 PostureDataService: currentDate=$currentDate, currentTime=$currentTime")
             

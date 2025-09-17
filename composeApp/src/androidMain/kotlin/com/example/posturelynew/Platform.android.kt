@@ -5,6 +5,10 @@ import android.content.SharedPreferences
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+import androidx.activity.result.contract.ActivityResultContracts
 
 actual fun getPlatformName(): String = "Android"
 
@@ -71,4 +75,34 @@ actual fun openEmailClient(to: String, subject: String, body: String) {
     } catch (_: Throwable) {
         // ignore if no email client
     }
+}
+
+actual fun openUrl(url: String) {
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    try {
+        val ctx = obtainApplicationContext()
+        ctx.startActivity(intent)
+    } catch (_: Throwable) {
+        // ignore if no browser available
+    }
+}
+
+actual fun requestPhoneTrackingPermissions() {
+    try {
+        val ctx = obtainApplicationContext()
+        val granted = ContextCompat.checkSelfPermission(ctx, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+        if (!granted) {
+            // Launch a tiny activity to request permission in a Compose-friendly way
+            val intent = Intent(ctx, PermissionRequestActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            intent.putExtra(PermissionRequestActivity.EXTRA_PERMISSION, Manifest.permission.CAMERA)
+            ctx.startActivity(intent)
+        }
+    } catch (_: Throwable) {
+        // ignore
+    }
+}
+
+actual fun requestAirPodsPermissions() {
+    // No-op on Android
 }

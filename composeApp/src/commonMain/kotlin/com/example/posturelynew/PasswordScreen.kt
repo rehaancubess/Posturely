@@ -11,81 +11,54 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import kotlinx.coroutines.delay
 import com.example.posturelynew.supabase.Supa
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(
-    onNavigateToOTP: (String) -> Unit
+fun PasswordScreen(
+    email: String,
+    onNavigateToHome: () -> Unit,
+    onBackToLogin: () -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
-    var isEmailValid by remember { mutableStateOf(false) }
-    var showError by remember { mutableStateOf(false) }
+    var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-    
-    // Focus requester for autofocus
-    val focusRequester = remember { FocusRequester() }
-    
-    // Colors matching your app's yellow and brown theme
-    val pageBg = Color(0xFFFED867) // Your app's yellow background
-    val textPrimary = Color(0xFF0F1931) // Dark text on yellow background
+
+    val pageBg = Color(0xFFFED867)
+    val textPrimary = Color(0xFF0F1931)
     val subText = Color(0xFF6B7280)
-    val accentBrown = Color(0xFF7A4B00) // Your brown theme
+    val accentBrown = Color(0xFF7A4B00)
     val accentRed = Color(0xFFEF4444)
     val lightBrown = Color(0xFFD2B48C)
-    
-    // Email validation function
-    fun validateEmail(email: String): Boolean {
-        val emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\$"
-        return email.matches(emailRegex.toRegex())
-    }
-    
-    // Handle email changes
-    fun onEmailChange(newEmail: String) {
-        email = newEmail
-        isEmailValid = validateEmail(newEmail)
-        showError = false
-        errorMessage = ""
-    }
-    
-    // Handle submit
-    fun onSubmit() {
-        if (isEmailValid) {
+
+    fun submit() {
+        if (password.isNotEmpty()) {
             isLoading = true
         } else {
             showError = true
+            errorMessage = "Please enter password"
         }
     }
-    
-    // Handle the loading and navigation
+
     LaunchedEffect(isLoading) {
         if (isLoading) {
             try {
-                Supa.sendEmailOtp(email)
+                Supa.signInWithEmailPassword(email, password)
                 isLoading = false
-                onNavigateToOTP(email)
+                onNavigateToHome()
             } catch (e: Exception) {
                 isLoading = false
-                errorMessage = e.message ?: "Failed to send OTP"
+                errorMessage = e.message ?: "Invalid credentials"
                 showError = true
             }
         }
     }
-    
-    // Autofocus the text field when screen loads to open keyboard
-    LaunchedEffect(Unit) {
-        delay(300) // Delay to ensure the screen is fully loaded and rendered
-        focusRequester.requestFocus()
-    }
-    
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -93,38 +66,40 @@ fun LoginScreen(
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Add safe space for status bar
         Spacer(modifier = Modifier.height(60.dp))
-        
-        // Title - matching the image
+
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+            TextButton(onClick = onBackToLogin, colors = ButtonDefaults.textButtonColors(contentColor = textPrimary)) {
+                Text("← Back", fontSize = 16.sp)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         Text(
-            text = "REGISTER",
+            text = "ENTER PASSWORD",
             color = textPrimary,
             fontSize = 32.sp,
             fontWeight = FontWeight.ExtraBold,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-        
-        // Description text
+
         Text(
-            text = "Please enter your valid email address. We will send you a 6-digit code to verify your account.",
+            text = "Sign in as $email",
             color = textPrimary,
             fontSize = 16.sp,
             textAlign = TextAlign.Center,
-            lineHeight = 22.sp,
             modifier = Modifier.padding(bottom = 48.dp)
         )
-        
-        // Email Input Field - with your app's color theme
+
         OutlinedTextField(
-            value = email,
-            onValueChange = { onEmailChange(it) },
-            placeholder = { Text("Enter your email", color = subText) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            value = password,
+            onValueChange = { password = it; showError = false },
+            placeholder = { Text("Enter password", color = subText) },
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(focusRequester),
+            modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = accentBrown,
                 unfocusedBorderColor = accentBrown,
@@ -138,11 +113,10 @@ fun LoginScreen(
             ),
             shape = RoundedCornerShape(12.dp)
         )
-        
-        // Error message
-        if (showError && !isEmailValid) {
+
+        if (showError && errorMessage.isNotEmpty()) {
             Text(
-                text = "Please enter a valid email address",
+                text = errorMessage,
                 color = accentRed,
                 fontSize = 14.sp,
                 modifier = Modifier
@@ -150,13 +124,12 @@ fun LoginScreen(
                     .align(Alignment.Start)
             )
         }
-        
+
         Spacer(modifier = Modifier.height(32.dp))
-        
-        // Submit Button - using your brown theme
+
         Button(
-            onClick = { onSubmit() },
-            enabled = isEmailValid && !isLoading,
+            onClick = { submit() },
+            enabled = password.isNotEmpty() && !isLoading,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
@@ -174,17 +147,16 @@ fun LoginScreen(
                 )
             } else {
                 Text(
-                    text = "SUBMIT",
+                    text = "SIGN IN",
                     color = Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.weight(1f))
-        
-        // Footer text
+
         Text(
             text = "Posture insights are wellness guidance, not medical advice.",
             color = subText,
@@ -194,3 +166,5 @@ fun LoginScreen(
         )
     }
 }
+
+

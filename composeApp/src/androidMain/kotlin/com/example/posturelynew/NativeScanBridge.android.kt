@@ -1,9 +1,21 @@
 package com.example.posturelynew
 
-// Android stub for now (existing Android tracking UI already present elsewhere).
-// This keeps multiplatform expect/actual satisfied without altering existing flows.
+import android.content.Context
+import com.example.posturelynew.scan.ScanCameraActivity
+
+// Global context storage for Android
+private var appContext: Context? = null
+
+fun setAppContext(context: Context) {
+    appContext = context
+}
+
 actual fun openNativeScanCamera() {
-    // TODO: Optionally launch a dedicated Activity with CameraX + overlay, separate from current flows.
+    appContext?.let { context ->
+        val intent = ScanCameraActivity.createIntent(context)
+        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
+    }
 }
 
 

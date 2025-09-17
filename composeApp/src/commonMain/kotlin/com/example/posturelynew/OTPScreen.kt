@@ -41,6 +41,7 @@ fun OTPScreen(
     val subText = Color(0xFF6B7280)
     val accentBrown = Color(0xFF7A4B00) // Your brown theme
     val accentRed = Color(0xFFEF4444)
+    val lightBrown = Color(0xFFD2B48C)
     
     // Countdown timer
     LaunchedEffect(Unit) {
@@ -199,7 +200,7 @@ fun OTPScreen(
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = accentBrown,
-                disabledContainerColor = subText
+                disabledContainerColor = lightBrown
             )
         ) {
             if (isLoading) {

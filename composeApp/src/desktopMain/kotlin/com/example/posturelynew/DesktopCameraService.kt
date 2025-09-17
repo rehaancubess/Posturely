@@ -44,44 +44,39 @@ class DesktopCameraService {
             // Try to find a working camera index
             var workingIndex = -1
             for (index in 0..2) { // Try indices 0, 1, 2
-                println("DesktopCameraService: Testing camera index $index...")
+                
                 desktopCamera?.selectCamera(index)
                 if (desktopCamera?.testCameraAccess() == true) {
                     workingIndex = index
-                    println("DesktopCameraService: Camera index $index works!")
+                    
                     break
                 } else {
-                    println("DesktopCameraService: Camera index $index failed")
+                    
                 }
             }
             
             isCameraInitialized = workingIndex >= 0
             
             if (isCameraInitialized) {
-                println("DesktopCameraService: JavaCV camera initialized successfully with camera index $workingIndex")
+                
                 val cameras = desktopCamera?.getAvailableCameras() ?: emptyList()
-                println("DesktopCameraService: Found ${cameras.size} cameras")
+                
                 cameras.forEachIndexed { index, name ->
-                    println("  Camera $index: $name")
+                    
                 }
-                println("DesktopCameraService: Working camera index $workingIndex selected: ${desktopCamera?.getSelectedCameraName()}")
-                println("DesktopCameraService: Camera access test passed")
+                
             } else {
-                println("DesktopCameraService: All camera indices failed - camera may not be available or accessible")
-                println("DesktopCameraService: This could be due to:")
-                println("  - Camera permissions not granted")
-                println("  - Camera being used by another application")
-                println("  - No cameras available on this system")
+                
             }
         } catch (e: Exception) {
-            println("DesktopCameraService: Error initializing camera: ${e.message}")
+            
             isCameraInitialized = false
         }
     }
     
     private fun initializeMediaPipe() {
         try {
-            println("DesktopCameraService: Initializing MediaPipe...")
+            
             mediaPipeService = DesktopMediaPipeWsService()
             mediaPipeService?.setListener(object : DesktopMediaPipeWsService.PoseLandmarkerListener {
                 override fun onPoseLandmarkerResult(landmarks: List<Pair<Float, Float>>, score: Int, status: String) {
@@ -93,7 +88,7 @@ class DesktopCameraService {
                 }
                 
                 override fun onPoseLandmarkerError(error: String) {
-                    println("DesktopCameraService: MediaPipe error: $error")
+                    
                 }
             })
             mediaPipeService?.setupPoseLandmarker()
@@ -108,12 +103,10 @@ class DesktopCameraService {
             isMediaPipeInitialized = mediaPipeService?.isInitialized() ?: false
             
             if (isMediaPipeInitialized) {
-                println("DesktopCameraService: MediaPipe initialized successfully")
             } else {
-                println("DesktopCameraService: Failed to initialize MediaPipe")
             }
         } catch (e: Exception) {
-            println("DesktopCameraService: Error initializing MediaPipe: ${e.message}")
+            
             e.printStackTrace()
             isMediaPipeInitialized = false
         }
@@ -173,41 +166,41 @@ class DesktopCameraService {
     }
     
     fun startCamera(onFrameUpdate: (ImageBitmap) -> Unit) {
-        println("DesktopCameraService: startCamera called with callback")
+        
         this.onFrameUpdate = onFrameUpdate
-        println("DesktopCameraService: onFrameUpdate callback set successfully")
+        
         isRunning = true
-        println("DesktopCameraService: Camera service marked as running")
+        
         
         if (isCameraInitialized) {
             // Initialize MediaPipe if not already done (needed for pose detection)
             if (!isMediaPipeInitialized) {
-                println("DesktopCameraService: Auto-initializing MediaPipe for camera...")
+                
                 try {
                     initializeMediaPipe()
                 } catch (e: Exception) {
-                    println("DesktopCameraService: Warning: MediaPipe initialization failed, camera will work but no pose detection: ${e.message}")
+                    
                     // Don't fail camera start, just log warning
                 }
             }
             
-            println("DesktopCameraService: Camera is initialized, starting native camera...")
+            
             startNativeCamera()
         } else {
-            println("DesktopCameraService: Camera not initialized - cannot start without camera")
+            
             throw RuntimeException("Camera not initialized - cannot start camera service")
         }
     }
     
     private fun startNativeCamera() {
         try {
-            println("DesktopCameraService: Starting native camera...")
+            
             desktopCamera?.startCamera { frame ->
-                println("DesktopCameraService: Received frame from camera: ${frame.width}x${frame.height}")
+                
                 currentFrame = frame
-                println("DesktopCameraService: Invoking onFrameUpdate callback...")
+                
                 onFrameUpdate?.invoke(frame)
-                println("DesktopCameraService: onFrameUpdate callback completed")
+                
                 
                 // Process frame with MediaPipe for real pose detection
                 if (isMediaPipeInitialized) {
@@ -216,27 +209,27 @@ class DesktopCameraService {
                         val bufferedImage = desktopCamera?.getLastBufferedImage() ?: frame.toBufferedImage()
                         mediaPipeService?.detectAsync(bufferedImage, System.currentTimeMillis())
                     } catch (e: Exception) {
-                        println("DesktopCameraService: Error processing frame with MediaPipe: ${e.message}")
+                        
                     }
                 } else {
-                    println("DesktopCameraService: MediaPipe not initialized yet, skipping pose detection")
+                    
                 }
             }
-            println("DesktopCameraService: Camera start request sent successfully")
+            
         } catch (e: Exception) {
-            println("DesktopCameraService: Error starting camera: ${e.message}")
+            
             e.printStackTrace()
             throw RuntimeException("Failed to start camera: ${e.message}")
         }
     }
     
     private fun createMockFrame() {
-        println("DesktopCameraService: Creating mock frame for testing...")
+        
         // Create a simple mock frame when camera is not available
         val mockFrame = createMockImageBitmap()
         currentFrame = mockFrame
         onFrameUpdate?.invoke(mockFrame)
-        println("DesktopCameraService: Mock frame created and sent")
+        
     }
     
     private fun createMockImageBitmap(): ImageBitmap {
@@ -272,11 +265,11 @@ class DesktopCameraService {
         
         // Initialize MediaPipe if not already initialized
         if (!isMediaPipeInitialized) {
-            println("DesktopCameraService: Initializing MediaPipe for tracking...")
+            
             try {
                 initializeMediaPipe()
             } catch (e: Exception) {
-                println("DesktopCameraService: Failed to initialize MediaPipe: ${e.message}")
+                
                 e.printStackTrace()
                 isTracking = false
                 throw RuntimeException("Failed to initialize MediaPipe: ${e.message}")
@@ -284,11 +277,11 @@ class DesktopCameraService {
         }
         
         if (isMediaPipeInitialized) {
-            println("DesktopCameraService: Starting real MediaPipe pose tracking")
+            
             mediaPipeService?.startTracking()
             // Real tracking will happen in the camera frame callback
         } else {
-            println("DesktopCameraService: MediaPipe not available - real camera tracking requires MediaPipe")
+            
             isTracking = false
             throw RuntimeException("MediaPipe not initialized - cannot start tracking without pose detection")
         }
@@ -326,7 +319,7 @@ class DesktopCameraService {
     fun getSelectedCameraName(): String = desktopCamera?.getSelectedCameraName() ?: "Unknown Camera"
     
     fun selectCameraIndex(index: Int) {
-        println("DesktopCameraService: Manually selecting camera index $index")
+        
         desktopCamera?.selectCamera(index)
     }
     

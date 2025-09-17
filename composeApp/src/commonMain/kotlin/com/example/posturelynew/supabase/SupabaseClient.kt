@@ -6,6 +6,7 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.auth.providers.builtin.OTP
+import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.from
@@ -78,6 +79,20 @@ object Supa {
         println("🔍 Supabase: Session will be persisted automatically")
     }
 
+    // -------- Email + Password Sign-in (for testers) --------
+    suspend fun signInWithEmailPassword(email: String, password: String) {
+        try {
+            client.auth.signInWith(Email) {
+                this.email = email
+                this.password = password
+            }
+            println("✅ Supabase: Password sign-in successful for $email")
+        } catch (e: Exception) {
+            println("❌ Supabase: Password sign-in failed: ${e.message}")
+            throw e
+        }
+    }
+
     // -------- Session observation --------
 
     // Expose the Flow<SessionStatus> for UI layers to collect.
@@ -116,13 +131,18 @@ object Supa {
     fun currentUserIdOrEmpty(): String {
         return try { client.auth.currentSessionOrNull()?.user?.id ?: "" } catch (_: Exception) { "" }
     }
+    fun currentUserEmailOrEmpty(): String {
+        return try { client.auth.currentSessionOrNull()?.user?.email ?: "" } catch (_: Exception) { "" }
+    }
     
     suspend fun insertPostureRecord(record: PostureRecord) {
         client.postgrest.from("posture_records").insert(record)
     }
     
     suspend fun getTodaysPostureRecords(userEmail: String): List<PostureRecord> {
-        val today = DateTime.formatTimeStamp(DateTime.getCurrentTimeInMilliSeconds(), "yyyy-MM-dd")
+        // TEMP: Force today to 2056-..-.. to match iOS data scheme
+        val todayRaw = DateTime.formatTimeStamp(DateTime.getCurrentTimeInMilliSeconds(), "yyyy-MM-dd")
+        val today = if (todayRaw.length >= 10) "2056" + todayRaw.substring(4) else todayRaw
         return client.postgrest.from("posture_records")
             .select {
                 filter {
@@ -173,17 +193,13 @@ object Supa {
 
     suspend fun getWeeksProgress(userEmail: String): Map<String, Any> {
         val todayMillis = DateTime.getCurrentTimeInMilliSeconds()
-        val todayDateRaw = DateTime.formatTimeStamp(todayMillis, "yyyy-MM-dd")
-        val todayYear = todayDateRaw.substring(0, 4)
-        
-        // Normalize to 2025 for day-of-week math (stable Monday baseline) then restore original year for DB keys
-        val normalizedTodayDate = "2025" + todayDateRaw.substring(4)
-        val normalizedTodayMillis = DateTime.getDateInMilliSeconds(normalizedTodayDate, "yyyy-MM-dd")
-        val dayIndex = getDayOfWeek(normalizedTodayDate) // 0=Mon..6=Sun using normalized calendar
-        val weekStartMillisNormalized = normalizedTodayMillis - dayIndex * 24L * 60L * 60L * 1000L
-        val weekStartDateNormalized = DateTime.formatTimeStamp(weekStartMillisNormalized, "yyyy-MM-dd")
-        val weekStartDate = todayYear + weekStartDateNormalized.substring(4)
-        val todayDate = todayDateRaw
+        val realTodayDate = DateTime.formatTimeStamp(todayMillis, "yyyy-MM-dd")
+        val realTodayMillis = DateTime.getDateInMilliSeconds(realTodayDate, "yyyy-MM-dd")
+        val dayIndex = getDayOfWeek(realTodayDate) // 0=Mon..6=Sun
+        val weekStartMillisReal = realTodayMillis - dayIndex * 24L * 60L * 60L * 1000L
+        // Convert real dates to 2056-based keys for DB
+        val weekStartDate = "2056" + DateTime.formatTimeStamp(weekStartMillisReal, "yyyy-MM-dd").substring(4)
+        val todayDate = "2056" + realTodayDate.substring(4)
         
         println("📅 Supabase: Week range: $weekStartDate to $todayDate")
         
@@ -205,9 +221,9 @@ object Supa {
 
         // Generate expected dates for the week (Monday to Sunday) using normalized baseline, then swap back to the original year
         val dates = (0..6).map { offset ->
-            val millis = weekStartMillisNormalized + offset * 24L * 60L * 60L * 1000L
-            val normalized = DateTime.formatTimeStamp(millis, "yyyy-MM-dd") // 2025-..-..
-            todayYear + normalized.substring(4) // e.g., 2056-..-..
+            val millis = weekStartMillisReal + offset * 24L * 60L * 60L * 1000L
+            val real = DateTime.formatTimeStamp(millis, "yyyy-MM-dd")
+            "2056" + real.substring(4)
         }
 
         if (allRecords.isEmpty()) {
@@ -253,10 +269,19 @@ object Supa {
 
     suspend fun getMonthsProgress(userEmail: String): Map<String, Any> {
         val todayMillis = DateTime.getCurrentTimeInMilliSeconds()
-        val monthStartMillis = todayMillis - 35L * 24L * 60L * 60L * 1000L // 5 weeks ago
-        
-        val monthStartDate = DateTime.formatTimeStamp(monthStartMillis, "yyyy-MM-dd")
-        val todayDate = DateTime.formatTimeStamp(todayMillis, "yyyy-MM-dd")
+        // Align weeks to Monday like iOS and like weekly query logic
+        val todayDateRawReal = DateTime.formatTimeStamp(todayMillis, "yyyy-MM-dd")
+        val todayDateRaw = if (todayDateRawReal.length >= 10) "2056" + todayDateRawReal.substring(4) else todayDateRawReal
+        val todayYear = "2056"
+        val normalizedTodayDate = todayYear + todayDateRaw.substring(4)
+        val normalizedTodayMillis = DateTime.getDateInMilliSeconds(normalizedTodayDate, "yyyy-MM-dd")
+        val dayIndex = getDayOfWeek(normalizedTodayDate) // 0=Mon..6=Sun
+        val currentWeekStartMillisNormalized = normalizedTodayMillis - dayIndex * 24L * 60L * 60L * 1000L
+
+        // Query window: last 5 Monday-aligned weeks inclusive (oldest Monday to today)
+        val windowStartMillisNormalized = currentWeekStartMillisNormalized - 4L * 7L * 24L * 60L * 60L * 1000L
+        val monthStartDate = todayYear + DateTime.formatTimeStamp(windowStartMillisNormalized, "yyyy-MM-dd").substring(4)
+        val todayDate = todayDateRaw
         
         // Single query for all records in the date range
         val allRecords = try {
@@ -274,17 +299,15 @@ object Supa {
             emptyList()
         }
 
-        // Generate week labels and date ranges
+        // Generate Monday-aligned week labels and date ranges (W1 old -> W5 new)
         val weekLabels = listOf("W1", "W2", "W3", "W4", "W5")
-        val weekRanges = (0..4).map { weekOffset ->
-            val weekStartMillis = todayMillis - weekOffset * 7L * 24L * 60L * 60L * 1000L
-            val weekEndMillis = weekStartMillis + 6L * 24L * 60L * 60L * 1000L
-            
-            val weekStartDate = DateTime.formatTimeStamp(weekStartMillis, "yyyy-MM-dd")
-            val weekEndDate = DateTime.formatTimeStamp(weekEndMillis, "yyyy-MM-dd")
-            
-            Pair(weekLabels[4 - weekOffset], Pair(weekStartDate, weekEndDate))
-        }.reversed()
+        val weekRanges = (4 downTo 0).map { weekOffset ->
+            val startMillisNormalized = currentWeekStartMillisNormalized - weekOffset * 7L * 24L * 60L * 60L * 1000L
+            val endMillisNormalized = startMillisNormalized + 6L * 24L * 60L * 60L * 1000L
+            val startDate = todayYear + DateTime.formatTimeStamp(startMillisNormalized, "yyyy-MM-dd").substring(4)
+            val endDate = todayYear + DateTime.formatTimeStamp(endMillisNormalized, "yyyy-MM-dd").substring(4)
+            Pair(weekLabels[4 - weekOffset], Pair(startDate, endDate))
+        }
 
         if (allRecords.isEmpty()) {
             return mapOf(

@@ -27,3 +27,13 @@ expect class PlatformStorage() {
 
 // Cross-platform email intent
 expect fun openEmailClient(to: String, subject: String = "", body: String = "")
+
+// Cross-platform URL opening
+expect fun openUrl(url: String)
+
+// Tracking permission helpers
+// Phone: camera permission for pose tracking
+expect fun requestPhoneTrackingPermissions()
+
+// AirPods: motion permission on iOS (no-op on others)
+expect fun requestAirPodsPermissions()

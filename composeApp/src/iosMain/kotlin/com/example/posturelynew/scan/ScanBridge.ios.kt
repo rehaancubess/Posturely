@@ -42,5 +42,3 @@ actual suspend fun postPostureReport(scanId: String, frontBase64: String, sideBa
         if (code in 200..299) cont.resume(Result.success(Unit)) else cont.resume(Result.failure(IllegalStateException("HTTP $code ${err ?: ""}")))
     }
 }
-
-

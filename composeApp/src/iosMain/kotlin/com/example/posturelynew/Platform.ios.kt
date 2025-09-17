@@ -7,6 +7,9 @@ import com.example.posturelynew.NativeAirPodsBridge
 import kotlinx.coroutines.*
 import platform.Foundation.NSURL
 import platform.UIKit.UIApplication
+import platform.AVFoundation.AVCaptureDevice
+import platform.AVFoundation.AVMediaTypeVideo
+import platform.Foundation.NSNotificationCenter
 
 actual fun getPlatformName(): String = "iOS"
 
@@ -130,4 +133,31 @@ actual fun openEmailClient(to: String, subject: String, body: String) {
             completionHandler = null
         )
     }
+}
+
+actual fun openUrl(url: String) {
+    val nsUrl = NSURL(string = url)
+    if (nsUrl != null && UIApplication.sharedApplication.canOpenURL(nsUrl)) {
+        UIApplication.sharedApplication.openURL(
+            url = nsUrl,
+            options = emptyMap<Any?, Any?>(),
+            completionHandler = null
+        )
+    }
+}
+
+actual fun requestPhoneTrackingPermissions() {
+    // Delegate to Swift via NotificationCenter to avoid Kotlin/Native AVFoundation symbol issues
+    NSNotificationCenter.defaultCenter.postNotificationName(
+        aName = "RequestCameraPermission",
+        `object` = null
+    )
+}
+
+actual fun requestAirPodsPermissions() {
+    // Ask Swift service to start motion tracking which will present permission dialog if needed
+    NSNotificationCenter.defaultCenter.postNotificationName(
+        aName = "StartAirPodsMotionTracking",
+        `object` = null
+    )
 }

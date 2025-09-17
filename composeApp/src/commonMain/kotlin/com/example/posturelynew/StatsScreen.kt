@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.interaction.MutableInteractionSource
 
 @Composable
 fun StatsScreen() {
@@ -237,7 +238,8 @@ fun StatsScreen() {
             ) {
                 Text("Total Minutes", color = textPrimary.copy(alpha = 0.8f), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(8.dp))
-                Text((progressData.totalMinutes).toString(), color = textPrimary, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
+                val totalMinutesForRange = if (selectedRange == 0) progressData.weekTotalMinutes else progressData.totalMinutes
+                Text(totalMinutesForRange.toString(), color = textPrimary, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
                 Spacer(Modifier.height(8.dp))
                 BarChart(
                     modifier = Modifier
@@ -280,7 +282,11 @@ private fun RowScope.StatsRangeChip(label: String, selected: Boolean, onClick: (
             .border(1.dp, Color(0xFFF5D37A), RoundedCornerShape(20.dp))
             .padding(horizontal = 16.dp)
             .wrapContentHeight(align = Alignment.CenterVertically)
-            .clickable(onClick = onClick),
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            ),
         contentAlignment = Alignment.Center
     ) {
         Text(label, color = text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
@@ -426,7 +432,8 @@ private fun normalizeYear(dateStr: String): String {
     // yyyy-MM-dd
     if (dateStr.length < 10) return dateStr
     val year = dateStr.substring(0, 4)
-    return if (year != "2025") "2025" + dateStr.substring(4) else dateStr
+    // TEMP: Align to 2056 to match iOS-stored rows
+    return if (year != "2056") "2056" + dateStr.substring(4) else dateStr
 }
 
 private fun generateBars(progressData: ProgressData, range: Int): List<Float> {

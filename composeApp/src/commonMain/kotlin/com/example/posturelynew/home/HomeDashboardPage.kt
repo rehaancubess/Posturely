@@ -66,6 +66,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.text.style.TextAlign
+import com.example.posturelynew.requestPhoneTrackingPermissions
+import com.example.posturelynew.requestAirPodsPermissions
 
 
 // Top-level helpers moved above to avoid local scope/resolution issues
@@ -715,6 +717,7 @@ fun HomeDashboardPage(
                          cardHeight = cardHeight,
                          onClick = {
                              selectedSource = "Phone"
+                             requestPhoneTrackingPermissions()
                          }
                      )
                      
@@ -740,6 +743,7 @@ fun HomeDashboardPage(
                              cardHeight = cardHeight,
                              onClick = { 
                                  selectedSource = "AirPods"
+                                 requestAirPodsPermissions()
                              }
                          )
                      }
