@@ -1,4 +1,4 @@
-package com.example.posturelynew.audio
+package com.mobil80.posturely.audio
 
 expect class AudioPlayer {
     /** Plays a sound by id (see soundResList) */

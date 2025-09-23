@@ -1,4 +1,4 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -28,7 +28,7 @@ import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import posturelynew.composeapp.generated.resources.Res
 import posturelynew.composeapp.generated.resources.giffygood
-import com.example.posturelynew.AirPodsTracker
+import com.mobil80.posturely.AirPodsTracker
 
 // Color definitions at file level
 private val pageBg = Color(0xFFFFF9EA)

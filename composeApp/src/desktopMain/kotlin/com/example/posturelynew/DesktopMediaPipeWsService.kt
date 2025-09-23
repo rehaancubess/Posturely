@@ -1,4 +1,4 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +22,7 @@ import java.io.ByteArrayOutputStream
 import java.util.Base64
 import javax.imageio.ImageIO
 import java.io.File
-import com.example.posturelynew.PoseMetrics
+import com.mobil80.posturely.PoseMetrics
 
 class DesktopMediaPipeWsService {
     private var isInitialized = false

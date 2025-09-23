@@ -1,4 +1,4 @@
-package com.example.posturelynew.scan
+package com.mobil80.posturely.scan
 
 // Compose can set a callback to receive images from native (iOS)
 object ScanImagesBridge {

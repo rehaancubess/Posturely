@@ -4,17 +4,5 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
-	<key>CFBundleDisplayName</key>
-	<string>Posturely</string>
-	<key>CFBundleName</key>
-	<string>Posturely</string>
-	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
-	<key>CFBundleVersion</key>
-	<string>1</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Posturely needs camera access to analyze your posture in real time.</string>
-	<key>NSMotionUsageDescription</key>
-	<string>Posturely uses head motion data from AirPods to estimate neck flex and posture.</string>
 </dict>
 </plist>

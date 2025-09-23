@@ -1,4 +1,4 @@
-package com.example.posturelynew.dashboard
+package com.mobil80.posturely.dashboard
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background

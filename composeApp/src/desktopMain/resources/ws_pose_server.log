@@ -319,3 +319,6 @@ websockets.exceptions.ConnectionClosedError: no close frame received or sent
 I0000 00:00:1758119361.590723 6297321 gl_context.cc:369] GL version: 2.1 (2.1 Metal - 89.3), renderer: Apple M1
 W0000 00:00:1758119361.698075 17372575 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
 W0000 00:00:1758119361.715202 17372579 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+I0000 00:00:1758119839.241445 6297321 gl_context.cc:369] GL version: 2.1 (2.1 Metal - 89.3), renderer: Apple M1
+W0000 00:00:1758119839.337282 17381108 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1758119839.358139 17381111 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.

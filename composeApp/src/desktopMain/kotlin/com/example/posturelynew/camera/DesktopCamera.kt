@@ -1,4 +1,4 @@
-package com.example.posturelynew.camera
+package com.mobil80.posturely.camera
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap

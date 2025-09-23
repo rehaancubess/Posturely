@@ -1,4 +1,4 @@
-package com.example.posturelynew.audio
+package com.mobil80.posturely.audio
 
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import java.io.File

@@ -1,6 +1,8 @@
 import Foundation
 import UIKit
 import AVFoundation
+import RevenueCat
+import RevenueCatUI
 
 class NotificationObserver: NSObject {
     private var bridge: PostureTrackingBridge?
@@ -41,6 +43,30 @@ class NotificationObserver: NSObject {
             self,
             selector: #selector(requestCameraPermission),
             name: NSNotification.Name("RequestCameraPermission"),
+            object: nil
+        )
+
+        // Present RevenueCat paywall from KMP side
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(presentRevenueCatPaywall),
+            name: NSNotification.Name("PresentRevenueCatPaywall"),
+            object: nil
+        )
+
+        // Open Screen Time configuration
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(openAppLockConfig),
+            name: NSNotification.Name("OpenAppLockConfig"),
+            object: nil
+        )
+
+        // Start Screen Time app lock schedule
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(startAppLock(_:)),
+            name: NSNotification.Name("StartAppLock"),
             object: nil
         )
     }
@@ -109,6 +135,58 @@ class NotificationObserver: NSObject {
             controller.modalPresentationStyle = .fullScreen
             root.present(controller, animated: true)
         }
+    }
+
+    // MARK: - RevenueCat Paywall Presentation
+    @objc private func presentRevenueCatPaywall() {
+        DispatchQueue.main.async {
+            guard let root = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .flatMap({ $0.windows })
+                .first(where: { $0.isKeyWindow })?.rootViewController else {
+                return
+            }
+            // First, check if user already has an active entitlement
+            Purchases.shared.getCustomerInfo { info, _ in
+                if let entitlements = info?.entitlements.active, entitlements["premium"] != nil {
+                    // User is subscribed; do not show paywall
+                    return
+                }
+                // Not subscribed → present paywall
+                Purchases.shared.getOfferings { offerings, _ in
+                    if let current = offerings?.current {
+                        let controller = RevenueCatUI.PaywallViewController(offering: current)
+                        controller.modalPresentationStyle = .fullScreen
+                        controller.isModalInPresentation = true // prevent swipe-to-dismiss
+                        root.present(controller, animated: true)
+                    } else {
+                        let fallback = RevenueCatUI.PaywallViewController()
+                        fallback.modalPresentationStyle = .fullScreen
+                        fallback.isModalInPresentation = true
+                        root.present(fallback, animated: true)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - App Lock (Screen Time) Stubs
+    @objc private func openAppLockConfig() {
+        AppLockManager.requestAuthorizationIfNeeded { granted in
+            DispatchQueue.main.async {
+                let vc = UIApplication.shared.connectedScenes
+                    .compactMap({ $0 as? UIWindowScene })
+                    .flatMap({ $0.windows })
+                    .first(where: { $0.isKeyWindow })?.rootViewController
+                AppLockManager.presentPicker(from: vc)
+            }
+        }
+    }
+
+    @objc private func startAppLock(_ notification: Notification) {
+        let from = (notification.userInfo?["from"] as? String) ?? ""
+        let till = (notification.userInfo?["till"] as? String) ?? ""
+        AppLockManager.startLock(from: from, till: till)
     }
 
     // MARK: - Camera permission request handler

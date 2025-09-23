@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import RevenueCat
 
 @main
 struct iOSApp: App {
@@ -14,6 +15,21 @@ struct iOSApp: App {
             ContentView()
                 .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
                 .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
+                .onAppear {
+                    // Initialize RevenueCat with Apple API key
+                    Purchases.configure(withAPIKey: "appl_cvHpElSxdfMMbxbzfRSXtdqPKym")
+                    Purchases.shared.getOfferings { offerings, error in
+                        if let error = error {
+                            print("[RC] Offerings fetch error: \(error)")
+                            return
+                        }
+                        if let current = offerings?.current {
+                            print("[RC] Current offering loaded: \(current.identifier)")
+                        } else {
+                            print("[RC] No current offering configured")
+                        }
+                    }
+                }
         }
     }
 }

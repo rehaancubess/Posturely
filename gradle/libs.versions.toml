@@ -16,6 +16,7 @@ kotlin = "2.2.0"
 kotlinx-coroutines = "1.10.2"
 supabase = "3.2.2"
 ktor = "3.2.2"
+purchasesKmp = "2.1.3+17.6.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -38,6 +39,11 @@ ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", 
 ktor-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 ktor-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 ktor-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+purchases-core = { module = "com.revenuecat.purchases:purchases-kmp-core", version.ref = "purchasesKmp" }
+purchases-datetime = { module = "com.revenuecat.purchases:purchases-kmp-datetime", version.ref = "purchasesKmp" }
+purchases-either = { module = "com.revenuecat.purchases:purchases-kmp-either", version.ref = "purchasesKmp" }
+purchases-result = { module = "com.revenuecat.purchases:purchases-kmp-result", version.ref = "purchasesKmp" }
+purchases-ui = { module = "com.revenuecat.purchases:purchases-kmp-ui", version.ref = "purchasesKmp" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

@@ -1,4 +1,4 @@
-package com.example.posturelynew.api
+package com.mobil80.posturely.api
 
 import io.ktor.client.*
 import io.ktor.client.call.*

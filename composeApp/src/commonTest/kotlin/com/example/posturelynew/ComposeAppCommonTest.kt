@@ -1,4 +1,4 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

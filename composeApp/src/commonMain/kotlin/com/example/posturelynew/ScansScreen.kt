@@ -1,4 +1,4 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

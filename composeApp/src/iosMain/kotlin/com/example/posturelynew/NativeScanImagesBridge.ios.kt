@@ -1,7 +1,7 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 import platform.Foundation.NSNotificationCenter
-import com.example.posturelynew.scan.ScanImagesBridge
+import com.mobil80.posturely.scan.ScanImagesBridge
 
 object NativeScanImagesBridge {
     init {

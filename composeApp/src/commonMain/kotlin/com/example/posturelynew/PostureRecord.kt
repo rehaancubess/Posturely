@@ -1,4 +1,4 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 import kotlinx.serialization.Serializable
 

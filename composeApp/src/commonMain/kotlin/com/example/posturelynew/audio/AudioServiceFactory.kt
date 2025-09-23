@@ -1,4 +1,4 @@
-package com.example.posturelynew.audio
+package com.mobil80.posturely.audio
 
 import androidx.compose.runtime.Composable
 

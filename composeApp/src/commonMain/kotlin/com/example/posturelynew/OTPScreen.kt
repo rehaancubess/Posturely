@@ -1,4 +1,4 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import kotlinx.coroutines.delay
-import com.example.posturelynew.supabase.Supa
+import com.mobil80.posturely.supabase.Supa
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

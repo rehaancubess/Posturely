@@ -1,4 +1,4 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
@@ -6,8 +6,8 @@ import java.awt.*
 import java.awt.image.BufferedImage
 import javax.swing.SwingUtilities
 import kotlin.math.*
-import com.example.posturelynew.camera.DesktopCamera
-import com.example.posturelynew.DesktopMediaPipeService
+import com.mobil80.posturely.camera.DesktopCamera
+import com.mobil80.posturely.DesktopMediaPipeService
 
 
 class DesktopCameraService {

@@ -1,6 +1,6 @@
-package com.example.posturelynew.home
+package com.mobil80.posturely.home
 
-import com.example.posturelynew.PoseMetrics
+import com.mobil80.posturely.PoseMetrics
 
 // Helper function to calculate real metrics from landmarks (imported from LiveTrackingScreen logic)
 internal fun calculateRealMetrics(landmarks: List<Pair<Float, Float>>): PoseMetrics {

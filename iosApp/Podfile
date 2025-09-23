@@ -7,5 +7,10 @@ target 'posturelynew' do
   # MediaPipe Tasks Vision for pose landmark detection
   pod 'MediaPipeTasksVision'
   
+  # RevenueCat for purchases & paywalls on iOS
+  pod 'RevenueCat'
+  # RevenueCatUI for dynamic paywalls from the dashboard
+  pod 'RevenueCatUI'
+  
   # Add any other pods you need here
 end 

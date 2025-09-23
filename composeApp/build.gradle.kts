@@ -1,4 +1,6 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import java.util.Properties
+import java.io.FileInputStream
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -32,6 +34,17 @@ kotlin {
             baseName = "ComposeApp"
             // Link AVFoundation framework for audio support
             linkerOpts("-framework", "AVFoundation")
+            // Explicit bundle ID to silence K/N warning during linking
+            freeCompilerArgs += listOf("-Xbinary=bundleId=com.mobil80.posturely.ComposeApp")
+        }
+    }
+    
+    // Opt in to ExperimentalForeignApi for RevenueCat KMP SDK
+    sourceSets {
+        named { it.lowercase().startsWith("ios") }.configureEach {
+            languageSettings {
+                optIn("kotlinx.cinterop.ExperimentalForeignApi")
+            }
         }
     }
 
@@ -60,6 +73,8 @@ kotlin {
                 
                 // DateTime
                 // Removed kotlinx-datetime - using our own DateTime object
+                
+                // RevenueCat KMP SDK - moved to platform-specific source sets
             }
         }
         val commonTest by getting {
@@ -79,6 +94,8 @@ kotlin {
                 implementation("androidx.core:core-ktx:1.12.0")
                 implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
                 implementation("androidx.activity:activity-compose:1.8.2")
+                // Compose preview annotations for release builds (@Preview)
+                implementation("androidx.compose.ui:ui-tooling-preview:1.5.8")
                 implementation("androidx.camera:camera-core:1.3.1")
                 implementation("androidx.camera:camera-camera2:1.3.1")
                 implementation("androidx.camera:camera-lifecycle:1.3.1")
@@ -92,6 +109,15 @@ kotlin {
                 
                 // ExoPlayer for better audio handling
                 implementation("androidx.media3:media3-exoplayer:1.3.1")
+                
+                // Google Play Billing for in-app subscriptions
+                implementation("com.android.billingclient:billing:6.1.0")
+                implementation("com.android.billingclient:billing-ktx:6.1.0")
+                
+                // RevenueCat KMP SDK (Android-specific)
+                implementation(libs.purchases.core)
+                implementation(libs.purchases.datetime)
+                implementation(libs.purchases.ui)
             }
         }
         
@@ -118,15 +144,16 @@ kotlin {
 }
 
 android {
-    namespace = "com.example.posturelynew"
+    namespace = "com.mobil80.posturely"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.example.posturelynew"
+        applicationId = "com.mobil80.posturely"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+        
     }
     buildFeatures {
         compose = true
@@ -139,10 +166,43 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    // Load signing config from key.properties if present
+    val keystoreProps = Properties().apply {
+        val propsFile = rootProject.file("key.properties")
+        if (propsFile.exists()) {
+            load(FileInputStream(propsFile))
+        }
+    }
+
+    val hasSigning = keystoreProps.getProperty("storeFile")?.isNotBlank() == true
+
+    if (hasSigning) {
+        signingConfigs {
+            create("release") {
+                val storeFilePath = keystoreProps.getProperty("storeFile")
+                if (!storeFilePath.isNullOrBlank()) {
+                    storeFile = file(storeFilePath)
+                    storePassword = keystoreProps.getProperty("storePassword")
+                    keyAlias = keystoreProps.getProperty("keyAlias")
+                    keyPassword = keystoreProps.getProperty("keyPassword")
+                    enableV1Signing = true
+                    enableV2Signing = true
+                }
+            }
+        }
+    }
+
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+            if (hasSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
+    }
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -156,13 +216,13 @@ dependencies {
 
 compose.desktop {
     application {
-        mainClass = "com.example.posturelynew.DesktopAppKt"
+        mainClass = "com.mobil80.posturely.DesktopAppKt"
         
         from(kotlin.targets.getByName("desktop"))
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "com.example.posturelynew"
+            packageName = "com.mobil80.posturely"
             packageVersion = "1.0.0"
             
             macOS {

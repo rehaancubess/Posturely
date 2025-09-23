@@ -1,4 +1,4 @@
-package com.example.posturelynew.supabase
+package com.mobil80.posturely.supabase
 
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.auth.Auth
@@ -12,8 +12,8 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.realtime.Realtime
 import kotlinx.coroutines.flow.Flow
-import com.example.posturelynew.PostureRecord
-import com.example.posturelynew.DateTime
+import com.mobil80.posturely.PostureRecord
+import com.mobil80.posturely.DateTime
 
 // TODO: move these to BuildConfig / expect/actual per target
 private const val SUPABASE_URL = "https://lexlrxlvmbpfzenzzgld.supabase.co"
@@ -55,11 +55,12 @@ object Supa {
             println("🔍 [DEBUG] Supabase URL: $SUPABASE_URL")
             println("🔍 [DEBUG] Auth config - scheme: not set, host: not set")
             
-            client.auth.signInWith(io.github.jan.supabase.auth.providers.builtin.OTP) {
+            client.auth.signInWith(OTP) {
                 this.email = email
-                createUser = true
+                // Create user if not existing
+                this.createUser = true
             }
-            println("✅ [DEBUG] OTP sent successfully")
+            println("✅ [DEBUG] OTP send request completed (Email channel)")
         } catch (e: Exception) {
             println("❌ [DEBUG] OTP send failed: ${e.message}")
             println("❌ [DEBUG] Exception type: ${e::class.simpleName}")
@@ -70,8 +71,9 @@ object Supa {
 
     //  Verify the code the user typed
     suspend fun verifyEmailOtp(email: String, code: String) {
+        println("🔍 [DEBUG] Verifying OTP for $email with code length=${code.length}")
         client.auth.verifyEmailOtp(
-            type = io.github.jan.supabase.auth.OtpType.Email.EMAIL,
+            type = OtpType.Email.EMAIL,
             email = email,
             token = code
         )

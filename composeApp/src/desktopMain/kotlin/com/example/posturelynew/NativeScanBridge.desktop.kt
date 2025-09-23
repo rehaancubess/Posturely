@@ -1,4 +1,4 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 // Desktop stub implementation - no-op since camera scanning is not needed on desktop
 actual fun openNativeScanCamera() {

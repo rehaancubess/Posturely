@@ -1,4 +1,4 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -17,9 +17,9 @@ import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.painterResource
 import posturelynew.composeapp.generated.resources.Res
 import posturelynew.composeapp.generated.resources.scans
-import com.example.posturelynew.scan.ScanImagesBridge
-import com.example.posturelynew.scan.postPostureReport
-import com.example.posturelynew.openNativeScanCamera
+import com.mobil80.posturely.scan.ScanImagesBridge
+import com.mobil80.posturely.scan.postPostureReport
+import com.mobil80.posturely.openNativeScanCamera
 import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
@@ -29,7 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.layout.ContentScale
-import com.example.posturelynew.scan.Base64Image
+import com.mobil80.posturely.scan.Base64Image
 import kotlinx.coroutines.delay
 
 @Composable

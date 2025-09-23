@@ -1,4 +1,4 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -19,12 +19,12 @@ import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import posturelynew.composeapp.generated.resources.Res
 import posturelynew.composeapp.generated.resources.giraffeenew
-import com.example.posturelynew.home.calculateRealMetrics
+import com.mobil80.posturely.home.calculateRealMetrics
 import kotlin.math.sin
 import kotlin.math.cos
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
-import com.example.posturelynew.audio.AudioPlayer
+import com.mobil80.posturely.audio.AudioPlayer
 
 @OptIn(ExperimentalResourceApi::class)
 @Composable
@@ -267,7 +267,7 @@ fun DesktopLiveTrackingScreen(
                     }
 
                     // Compute metrics and smoothing (optional; does not affect visibility)
-                    val metrics = com.example.posturelynew.home.calculateRealMetrics(newLandmarks)
+                    val metrics = com.mobil80.posturely.home.calculateRealMetrics(newLandmarks)
                     torsoTilt = metrics.torsoTilt
                     shoulderTilt = metrics.shoulderTilt
                     neckFlex = metrics.neckFlex

@@ -1,4 +1,4 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 class Greeting {
     private val platform = getPlatformName()

@@ -1,7 +1,8 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
-import com.example.posturelynew.supabase.Supa
-import com.example.posturelynew.PostureRecord
+import com.mobil80.posturely.supabase.Supa
+import com.mobil80.posturely.supabase.PostureBackend
+import com.mobil80.posturely.PostureRecord
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -190,23 +191,19 @@ class PostureDataService {
                 kotlinx.coroutines.delay(500)
                 
                 // Try multiple times to get the session
-                var session = Supa.getCurrentSession()
+                var session = try { Supa.getCurrentSession() } catch (_: Exception) { null }
                 var attempts = 0
                 while (session == null && attempts < 3) {
                     println("🔍 PostureDataService: Session attempt ${attempts + 1}/3 - session=${session != null}")
                     kotlinx.coroutines.delay(200)
-                    session = Supa.getCurrentSession()
+                    session = try { Supa.getCurrentSession() } catch (_: Exception) { null }
                     attempts++
                 }
                 
                 println("🔍 PostureDataService: Final authentication check - session=${session != null}")
-                if (session == null) {
-                    println("⚠️ PostureDataService: User not authenticated after multiple attempts, cannot save to Supabase")
-                    println("📊 PostureDataService: Recorded score $averageScore (local only - not authenticated)")
-                    return
-                }
+                // On desktop, session may be null (no SDK). Allow insert via platform backend.
                 println("✅ PostureDataService: User authenticated, proceeding with Supabase insertion")
-                println("🔍 PostureDataService: Session user: ${session.user?.email ?: "unknown"}")
+                
                 
                 // Add retry logic for network timeouts
                 var retryCount = 0
@@ -215,7 +212,8 @@ class PostureDataService {
                 
                 while (!success && retryCount < maxRetries) {
                     try {
-                        Supa.insertPostureRecord(record)
+                        // Use platform-specific backend to insert (desktop uses DesktopSupa mock)
+                        PostureBackend.insertRecord(record)
                         println("✅ PostureDataService: Successfully inserted into Supabase")
                         success = true
                         

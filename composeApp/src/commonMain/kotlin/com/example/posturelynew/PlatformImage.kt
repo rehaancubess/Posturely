@@ -1,4 +1,4 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier

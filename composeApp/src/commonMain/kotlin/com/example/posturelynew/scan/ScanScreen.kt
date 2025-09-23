@@ -1,4 +1,4 @@
-package com.example.posturelynew.scan
+package com.mobil80.posturely.scan
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background

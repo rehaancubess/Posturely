@@ -1,4 +1,4 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 // Shared data class for pose metrics (used by both common and desktop code)
 data class PoseMetrics(

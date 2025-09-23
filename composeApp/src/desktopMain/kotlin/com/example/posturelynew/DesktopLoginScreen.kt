@@ -1,4 +1,4 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.rememberScrollState
@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.ExperimentalResourceApi
-import com.example.posturelynew.supabase.DesktopSupa
+import com.mobil80.posturely.supabase.DesktopSupa
 import posturelynew.composeapp.generated.resources.Res
 import posturelynew.composeapp.generated.resources.giraffeenew
 

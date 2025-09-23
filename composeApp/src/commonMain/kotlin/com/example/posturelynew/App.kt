@@ -1,4 +1,4 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -47,7 +47,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlin.time.TimeSource
 import kotlin.time.Duration.Companion.seconds
-import com.example.posturelynew.supabase.Supa
+import com.mobil80.posturely.supabase.Supa
+import com.mobil80.posturely.revenuecat.rememberRevenueCatManager
+import com.mobil80.posturely.revenuecat.PaywallComposable
 
 @Composable
 fun App() {
@@ -87,7 +89,18 @@ fun App() {
                 }
             )
             "intro" -> IntroScreen(
-                onNavigateToLogin = { currentScreen = "login" }
+                onNavigateToWhyPostureMatters = { currentScreen = "why_posture_matters" }
+            )
+            "why_posture_matters" -> WhyPostureMattersScreen(
+                onNavigateToLogin = { currentScreen = "login" },
+                onContinue = { currentScreen = "case_studies" }
+            )
+            "case_studies" -> CaseStudiesScreen(
+                onSkip = { currentScreen = "helps_slides" },
+                onFinish = { currentScreen = "helps_slides" }
+            )
+            "helps_slides" -> HowPosturelyHelpsSlides(
+                onFinish = { currentScreen = "login" }
             )
             "login" -> LoginScreen(
                 onNavigateToOTP = { email -> 
@@ -340,6 +353,10 @@ fun HomeScreen(
     var selectedTab by remember { mutableStateOf(0) }
     // Persist bottom tab selection across navigations
     val storage = remember { PlatformStorage() }
+    
+    // Initialize RevenueCat manager for Android
+    val revenueCatManager = rememberRevenueCatManager()
+    
     LaunchedEffect(Unit) {
         // Force default to Track tab on app open
         selectedTab = 0
@@ -365,7 +382,7 @@ fun HomeScreen(
         ) {
             // Keep all tabs mounted; just toggle visibility. This preserves state and coroutines.
             KeepAliveTab(visible = selectedTab == 0) {
-                com.example.posturelynew.home.HomeDashboardPage(
+                com.mobil80.posturely.home.HomeDashboardPage(
                     isDark = isDark,
                     onToggleTheme = onToggleTheme,
                     onNavigateToLiveTracking = onNavigateToLiveTracking,
@@ -384,7 +401,8 @@ fun HomeScreen(
                 }
             }
             KeepAliveTab(visible = selectedTab == 2) { StatsScreen() }
-            KeepAliveTab(visible = selectedTab == 3) { ProfileScreen(onLogout = onLogout) }
+            KeepAliveTab(visible = selectedTab == 3) { ExercisesScreen() }
+            KeepAliveTab(visible = selectedTab == 4) { ProfileScreen(onLogout = onLogout) }
         }
 
         // Fixed bottom navigation bar like screenshot
@@ -407,7 +425,7 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                listOf("Track", "Scan", "Stats", "Profile").forEachIndexed { index, label ->
+                listOf("Track", "Scan", "Stats", "Exercise", "Profile").forEachIndexed { index, label ->
                     val isSelected = selectedTab == index
                     val iconTint = if (isSelected) selectedColor else unselected
                     Column(
@@ -479,6 +497,47 @@ fun HomeScreen(
                                 }
                             }
                             3 -> {
+                                // Exercises icon - simple dumbbell
+                                Canvas(modifier = Modifier.size(28.dp)) {
+                                    val w = size.width
+                                    val h = size.height
+                                    val barY = h * 0.5f
+                                    // bar
+                                    drawRoundRect(
+                                        color = iconTint,
+                                        topLeft = androidx.compose.ui.geometry.Offset(w * 0.2f, barY - 3f),
+                                        size = androidx.compose.ui.geometry.Size(w * 0.6f, 6f),
+                                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(3f, 3f)
+                                    )
+                                    // left plates
+                                    drawRoundRect(
+                                        color = iconTint,
+                                        topLeft = androidx.compose.ui.geometry.Offset(w * 0.08f, barY - 10f),
+                                        size = androidx.compose.ui.geometry.Size(6f, 20f),
+                                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(2f, 2f)
+                                    )
+                                    drawRoundRect(
+                                        color = iconTint,
+                                        topLeft = androidx.compose.ui.geometry.Offset(w * 0.12f, barY - 12f),
+                                        size = androidx.compose.ui.geometry.Size(6f, 24f),
+                                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(2f, 2f)
+                                    )
+                                    // right plates
+                                    drawRoundRect(
+                                        color = iconTint,
+                                        topLeft = androidx.compose.ui.geometry.Offset(w * 0.86f, barY - 10f),
+                                        size = androidx.compose.ui.geometry.Size(6f, 20f),
+                                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(2f, 2f)
+                                    )
+                                    drawRoundRect(
+                                        color = iconTint,
+                                        topLeft = androidx.compose.ui.geometry.Offset(w * 0.82f, barY - 12f),
+                                        size = androidx.compose.ui.geometry.Size(6f, 24f),
+                                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(2f, 2f)
+                                    )
+                                }
+                            }
+                            4 -> {
                                 // Profile icon - smaller head and slimmer shoulders (less filled)
                                 Canvas(modifier = Modifier.size(28.dp)) {
                                     val w = size.width
@@ -510,6 +569,12 @@ fun HomeScreen(
                 }
             }
         }
+        
+        // RevenueCat Paywall - Android only
+        PaywallComposable(
+            revenueCatManager = revenueCatManager,
+            onDismiss = { /* Paywall dismissed */ }
+        )
     }
 }
 

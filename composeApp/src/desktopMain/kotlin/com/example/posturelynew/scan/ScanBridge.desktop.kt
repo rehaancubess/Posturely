@@ -1,4 +1,4 @@
-package com.example.posturelynew.scan
+package com.mobil80.posturely.scan
 
 // Desktop stub implementation - no-op since posture reporting is not needed on desktop
 actual suspend fun postPostureReport(scanId: String, frontBase64: String, sideBase64: String): Result<Unit> {

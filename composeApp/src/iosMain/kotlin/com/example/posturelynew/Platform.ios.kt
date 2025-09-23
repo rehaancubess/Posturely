@@ -1,9 +1,9 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 import platform.Foundation.NSUserDefaults
 import platform.CoreMotion.*
 import kotlinx.cinterop.ExperimentalForeignApi
-import com.example.posturelynew.NativeAirPodsBridge
+import com.mobil80.posturely.NativeAirPodsBridge
 import kotlinx.coroutines.*
 import platform.Foundation.NSURL
 import platform.UIKit.UIApplication

@@ -1,6 +1,6 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
-import com.example.posturelynew.supabase.Supa
+import com.mobil80.posturely.supabase.Supa
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSNotification
 

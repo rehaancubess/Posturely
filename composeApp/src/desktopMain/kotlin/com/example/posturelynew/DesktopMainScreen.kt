@@ -1,4 +1,4 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -17,12 +17,12 @@ import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import posturelynew.composeapp.generated.resources.Res
 import posturelynew.composeapp.generated.resources.giraffeenew
-import com.example.posturelynew.StatusRingLarge
-import com.example.posturelynew.audio.AudioPlayer
+import com.mobil80.posturely.StatusRingLarge
+import com.mobil80.posturely.audio.AudioPlayer
 import kotlinx.coroutines.delay
 
 // Camera service used by desktop tracking
-import com.example.posturelynew.DesktopCameraService
+import com.mobil80.posturely.DesktopCameraService
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
@@ -61,6 +61,7 @@ fun DesktopMainScreen(
     var showCongratulationsDialog by remember { mutableStateOf(false) }
     var lowScoreTicks by remember { mutableStateOf(0) }
     var beepTick by remember { mutableStateOf(0) } // 10 * 200ms = 2s
+    var showSettingsMenu by remember { mutableStateOf(false) }
 
     val audioPlayer = remember { AudioPlayer() }
     val cameraService = remember { DesktopCameraService() }
@@ -252,8 +253,11 @@ fun DesktopMainScreen(
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("Posturely", color = textPrimary, fontSize = 40.sp, fontWeight = FontWeight.ExtraBold)
                 Spacer(Modifier.weight(1f))
-                TextButton(onClick = onLogout, colors = ButtonDefaults.textButtonColors(contentColor = textPrimary)) {
-                    Text("Logout", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                TextButton(
+                    onClick = { showSettingsMenu = true }, 
+                    colors = ButtonDefaults.textButtonColors(contentColor = textPrimary)
+                ) {
+                    Text("Settings", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
             Spacer(Modifier.height(16.dp))
@@ -379,6 +383,13 @@ fun DesktopMainScreen(
                     }
                 )
             }
+            
+            // Settings Menu
+            DesktopSettingsMenu(
+                isOpen = showSettingsMenu,
+                onDismiss = { showSettingsMenu = false },
+                onLogout = onLogout
+            )
         }
     }
 }

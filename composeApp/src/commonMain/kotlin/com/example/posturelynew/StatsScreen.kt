@@ -1,4 +1,4 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -26,6 +26,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 
 @Composable
 fun StatsScreen() {
@@ -53,8 +55,8 @@ fun StatsScreen() {
         }
     }
 
-    // Time range tabs
-    var selectedRange by remember { mutableStateOf(0) } // 0=Week, 1=Month, 2=Year
+    // Time range tabs (0 = This Week, 1 = All Time)
+    var selectedRange by remember { mutableStateOf(0) }
 
     // Derived values
     val totalLabeledMinutes = (progressData.goodMinutes + progressData.okMinutes + progressData.badMinutes)
@@ -70,9 +72,7 @@ fun StatsScreen() {
     }
     val averageScorePercent = (averageScore / 100f).coerceIn(0f, 1f)
     
-    // Check if month or year view should show nostats (temporarily disabled)
-    val hasInsufficientMonthData = selectedRange == 1 // Always show nostats for month
-    val hasInsufficientYearData = selectedRange == 2 // Always show nostats for year
+    // Month/Year views removed per request
 
     Column(
         modifier = Modifier
@@ -128,30 +128,12 @@ fun StatsScreen() {
                 .padding(bottom = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            StatsRangeChip(label = "Week", selected = selectedRange == 0) { selectedRange = 0 }
-            StatsRangeChip(label = "Month", selected = selectedRange == 1) { selectedRange = 1 }
-            StatsRangeChip(label = "Year", selected = selectedRange == 2) { selectedRange = 2 }
+            StatsRangeChip(label = "This Week", selected = selectedRange == 0) { selectedRange = 0 }
+            StatsRangeChip(label = "All Time", selected = selectedRange == 1) { selectedRange = 1 }
         }
 
-        // Show nostats image if month or year view, otherwise show normal content
-        if (hasInsufficientMonthData || hasInsufficientYearData) {
-            // Show nostats image for month/year data (temporarily disabled)
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Image(
-                    painter = painterResource(Res.drawable.nostats),
-                    contentDescription = "No stats available",
-                    modifier = Modifier
-                        .size(500.dp)
-                        .padding(16.dp)
-                )
-            }
-        } else {
-            // Donut + Legend + Line chart row
+        if (selectedRange == 0) {
+            // Donut + Legend + Line chart row (This Week)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -202,25 +184,34 @@ fun StatsScreen() {
                     }
                 }
             }
+        } else {
+            // All Time: History heatmap card
+            AllTimeHistoryCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                cardBg = cardBg,
+                textPrimary = textPrimary,
+                progressData = progressData
+            )
         }
 
-        // Only show cards and bar chart if not insufficient month/year data
-        if (!hasInsufficientMonthData && !hasInsufficientYearData) {
-            // Cards row: Total Time, Average Score
+        if (selectedRange == 0) {
+            // Cards row: Total Time, Average Score (This Week)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 StatCard(
                     title = "Total Time",
-                    value = if (selectedRange == 0) formatMinutes(progressData.weekTotalMinutes) else formatMinutes(progressData.totalMinutes),
+                    value = formatMinutes(progressData.weekTotalMinutes),
                     modifier = Modifier.weight(1f),
                     cardBg = cardBg,
                     textPrimary = textPrimary
                 )
                 StatCard(
                     title = "Average Score",
-                    value = (if (selectedRange == 0) progressData.weekAverageScore.takeIf { it > 0 } ?: 0 else progressData.averageScore.takeIf { it > 0 } ?: 0).toString(),
+                    value = (progressData.weekAverageScore.takeIf { it > 0 } ?: 0).toString(),
                     modifier = Modifier.weight(1f),
                     cardBg = cardBg,
                     textPrimary = textPrimary
@@ -229,7 +220,7 @@ fun StatsScreen() {
 
             Spacer(Modifier.height(12.dp))
 
-            // Total Minutes + Bar chart
+            // Total Minutes + Bar chart (weekly)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -238,25 +229,18 @@ fun StatsScreen() {
             ) {
                 Text("Total Minutes", color = textPrimary.copy(alpha = 0.8f), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(8.dp))
-                val totalMinutesForRange = if (selectedRange == 0) progressData.weekTotalMinutes else progressData.totalMinutes
-                Text(totalMinutesForRange.toString(), color = textPrimary, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
+                Text(progressData.weekTotalMinutes.toString(), color = textPrimary, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
                 Spacer(Modifier.height(8.dp))
                 BarChart(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(80.dp)
                         .padding(start = 20.dp),
-                    values = generateBars(progressData, selectedRange)
+                    values = generateBars(progressData, 0)
                 )
                 Spacer(Modifier.height(6.dp))
-                // Labels under the bars based on selected range
-                val barLabels = when (selectedRange) {
-                    0 -> listOf("M","T","W","T","F","S","S")
-                    1 -> listOf("W1","W2","W3","W4","W5")
-                    else -> listOf("J","F","M","A","M","J","J","A","S","O","N","D")
-                }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    barLabels.forEach { label ->
+                    listOf("M","T","W","T","F","S","S").forEach { label ->
                         Box(
                             modifier = Modifier.weight(1f),
                             contentAlignment = Alignment.Center
@@ -365,6 +349,144 @@ private fun BarChart(modifier: Modifier, values: List<Float>) {
                 size = Size(barWidth, height),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(12f, 12f)
             )
+        }
+    }
+}
+
+@Composable
+private fun AllTimeHistoryCard(
+    modifier: Modifier = Modifier,
+    cardBg: Color,
+    textPrimary: Color,
+    progressData: ProgressData
+) {
+    Column(
+        modifier = modifier
+            .background(cardBg, RoundedCornerShape(20.dp))
+            .padding(16.dp)
+    ) {
+        Text("History", color = textPrimary, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
+        Spacer(Modifier.height(8.dp))
+        val minutes = progressData.totalMinutes
+        Text("${minutes} minutes done so far. Great job, share progress with friends.", color = textPrimary.copy(alpha = 0.8f), fontSize = 16.sp)
+        Spacer(Modifier.height(16.dp))
+
+        // Config
+        val cell = 18.dp
+        val gap = 6.dp
+        val weeksToShow = 26 // ~6 months
+        val brown = Color(0xFF7A4B00)
+        val cellBg = Color(0xFFE9E7E3)
+
+        // Build list of week-starts (mon) newest at end so last column is current week
+        val millisToday = DateTime.getCurrentTimeInMilliSeconds()
+        val todayStr = DateTime.formatTimeStamp(millisToday, "yyyy-MM-dd")
+        val dayIndex = 0 // align visually; not critical for mock
+        val weekStartMs = millisToday - dayIndex * 24L * 60L * 60L * 1000L
+        val weekStarts = (weeksToShow - 1 downTo 0).map { offs -> weekStartMs - offs * 7L * 24L * 60L * 60L * 1000L }
+
+        // Month labels mapped to first column of each month
+        val monthLabels = weekStarts.map { ms -> DateTime.formatTimeStamp(ms, "MMM") }
+
+        // Scrollable heatmap with day labels on the left and month labels on top
+        Row(modifier = Modifier.fillMaxWidth()) {
+            // Days labels on the left (Sun..Sat)
+            Column(
+                verticalArrangement = Arrangement.spacedBy(gap),
+                horizontalAlignment = Alignment.End,
+                modifier = Modifier.padding(end = 8.dp).width(36.dp)
+            ) {
+                listOf("Sun","Mon","Tue","Wed","Thu","Fri","Sat").forEach { d ->
+                    Box(
+                        modifier = Modifier
+                            .height(cell)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.BottomEnd
+                    ) {
+                        Text(d, color = textPrimary.copy(alpha = 0.6f), fontSize = 12.sp)
+                    }
+                }
+            }
+
+            // Grid + month header
+            val sharedScroll = rememberScrollState()
+            Column(modifier = Modifier.weight(1f)) {
+                // Month labels row aligned with groups of columns (can span multiple boxes)
+                Row(
+                    modifier = Modifier.horizontalScroll(sharedScroll),
+                    horizontalArrangement = Arrangement.spacedBy(gap)
+                ) {
+                    // Build consecutive month groups with span length
+                    val groups = mutableListOf<Pair<String, Int>>()
+                    var i = 0
+                    while (i < monthLabels.size) {
+                        val current = monthLabels[i]
+                        var span = 1
+                        var j = i + 1
+                        while (j < monthLabels.size && monthLabels[j] == current) { span++; j++ }
+                        groups += current to span
+                        i = j
+                    }
+                    groups.forEach { (label, span) ->
+                        val groupWidth = ((cell.value * span) + (gap.value * (span - 1))).dp
+                        Box(modifier = Modifier.width(groupWidth), contentAlignment = Alignment.Center) {
+                            Text(
+                                label,
+                                color = textPrimary.copy(alpha = 0.7f),
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(6.dp))
+                // Grid rows
+                Column(verticalArrangement = Arrangement.spacedBy(gap)) {
+                    repeat(7) { r ->
+                        Row(
+                            modifier = Modifier.horizontalScroll(sharedScroll),
+                            horizontalArrangement = Arrangement.spacedBy(gap)
+                        ) {
+                            weekStarts.forEachIndexed { idx, _ ->
+                                val maxIntensity = ((minutes % 10) + 5).coerceAtLeast(5)
+                                val value = ((minutes + idx + r) % maxIntensity).toFloat()
+                                val intensity = (value / maxIntensity).coerceIn(0f, 1f)
+                                val cellColor = brown.copy(alpha = 0.20f + 0.60f * intensity)
+                                Box(
+                                    modifier = Modifier
+                                        .size(cell)
+                                        .background(cellBg, RoundedCornerShape(4.dp))
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .matchParentSize()
+                                            .background(cellColor, RoundedCornerShape(4.dp))
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("less", color = textPrimary.copy(alpha = 0.7f))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val gradients = listOf(0.2f, 0.35f, 0.5f, 0.7f, 0.9f)
+                gradients.forEach { a ->
+                    Box(
+                        modifier = Modifier
+                            .size(18.dp, 12.dp)
+                            .background(Color(0xFF7A4B00).copy(alpha = a), RoundedCornerShape(3.dp))
+                    )
+                }
+            }
+            Text("more", color = textPrimary.copy(alpha = 0.7f))
         }
     }
 }

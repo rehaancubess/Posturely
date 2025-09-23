@@ -1,4 +1,4 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 import androidx.compose.ui.graphics.ImageBitmap
 import java.awt.image.BufferedImage
@@ -28,7 +28,7 @@ import java.nio.file.WatchKey
 import java.nio.file.WatchEvent
 import javax.imageio.ImageIO
 import java.io.ByteArrayOutputStream
-import com.example.posturelynew.PoseMetrics
+import com.mobil80.posturely.PoseMetrics
 
 class DesktopMediaPipeService {
     private var isInitialized = false

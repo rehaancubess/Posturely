@@ -1,4 +1,4 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 expect object DateTime {
     fun getFormattedDate(

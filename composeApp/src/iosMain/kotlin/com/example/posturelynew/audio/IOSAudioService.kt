@@ -1,6 +1,6 @@
 @file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 
-package com.example.posturelynew.audio
+package com.mobil80.posturely.audio
 
 import kotlinx.cinterop.*
 import platform.AVFAudio.*

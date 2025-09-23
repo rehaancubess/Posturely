@@ -1,4 +1,4 @@
-package com.example.posturelynew
+package com.mobil80.posturely
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.window.Window
@@ -6,7 +6,7 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import com.example.posturelynew.DesktopLiveTrackingScreen
+import com.mobil80.posturely.DesktopLiveTrackingScreen
 
 fun main() = application {
     Window(

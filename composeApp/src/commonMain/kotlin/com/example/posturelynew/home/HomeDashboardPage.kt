@@ -1,4 +1,4 @@
-package com.example.posturelynew.home
+package com.mobil80.posturely.home
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -46,28 +46,28 @@ import posturelynew.composeapp.generated.resources.calibrating
 import posturelynew.composeapp.generated.resources.phone
 import posturelynew.composeapp.generated.resources.laptop
 import posturelynew.composeapp.generated.resources.airpods
-import com.example.posturelynew.AirPodsTracker
-import com.example.posturelynew.audio.rememberAudioPlayer
-import com.example.posturelynew.audio.soundResList
-import com.example.posturelynew.createPostureTrackingInterface
-import com.example.posturelynew.PoseMetrics
+import com.mobil80.posturely.AirPodsTracker
+import com.mobil80.posturely.audio.rememberAudioPlayer
+import com.mobil80.posturely.audio.soundResList
+import com.mobil80.posturely.createPostureTrackingInterface
+import com.mobil80.posturely.PoseMetrics
 import kotlinx.coroutines.delay
-import com.example.posturelynew.home.calculateRealMetrics
-import com.example.posturelynew.home.calculatePostureScore
-import com.example.posturelynew.home.smoothScore
-import com.example.posturelynew.PlatformStorage
-import com.example.posturelynew.PostureDataService
-import com.example.posturelynew.ProgressService
-import com.example.posturelynew.ProgressData
-import com.example.posturelynew.getPlatformName
+import com.mobil80.posturely.home.calculateRealMetrics
+import com.mobil80.posturely.home.calculatePostureScore
+import com.mobil80.posturely.home.smoothScore
+import com.mobil80.posturely.PlatformStorage
+import com.mobil80.posturely.PostureDataService
+import com.mobil80.posturely.ProgressService
+import com.mobil80.posturely.ProgressData
+import com.mobil80.posturely.getPlatformName
 import kotlinx.coroutines.*
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.text.style.TextAlign
-import com.example.posturelynew.requestPhoneTrackingPermissions
-import com.example.posturelynew.requestAirPodsPermissions
+import com.mobil80.posturely.requestPhoneTrackingPermissions
+import com.mobil80.posturely.requestAirPodsPermissions
 
 
 // Top-level helpers moved above to avoid local scope/resolution issues

@@ -1,4 +1,4 @@
-package com.example.posturelynew.supabase
+package com.mobil80.posturely.supabase
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -130,14 +130,54 @@ object DesktopSupa {
         println("🔧 [DESKTOP] Mock session refresh")
     }
     
-    fun isUserSignedIn(): Boolean = false
+    fun isUserSignedIn(): Boolean = true
     
-    suspend fun insertPostureRecord(record: com.example.posturelynew.PostureRecord) {
-        println("🔧 [DESKTOP] Mock posture record insertion: $record")
-        println("🔧 [DESKTOP] In a real implementation, this would save to Supabase")
+    suspend fun insertPostureRecord(record: com.mobil80.posturely.PostureRecord) {
+        withContext(Dispatchers.IO) {
+            try {
+                // REST insert to PostgREST
+                val url = URL("$SUPABASE_URL/rest/v1/posture_records")
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "POST"
+                connection.setRequestProperty("Content-Type", "application/json")
+                connection.setRequestProperty("apikey", SUPABASE_ANON_KEY)
+                connection.setRequestProperty("Authorization", "Bearer $SUPABASE_ANON_KEY")
+                connection.setRequestProperty("Prefer", "return=representation")
+                connection.doOutput = true
+
+                val jsonBody = """
+                    {
+                      "user_email": "${record.user_email}",
+                      "date": "${record.date}",
+                      "time": "${record.time}",
+                      "average_posture_score": ${record.average_posture_score},
+                      "tracking_source": "${record.tracking_source}",
+                      "timestamp": ${record.timestamp},
+                      "samples_count": ${record.samples_count}
+                    }
+                """.trimIndent()
+
+                OutputStreamWriter(connection.outputStream).use { writer ->
+                    writer.write(jsonBody)
+                    writer.flush()
+                }
+
+                val responseCode = connection.responseCode
+                if (responseCode in listOf(HttpURLConnection.HTTP_OK, HttpURLConnection.HTTP_CREATED)) {
+                    println("✅ [DESKTOP] Inserted posture record to Supabase for ${record.user_email} on ${record.date} ${record.time}")
+                } else {
+                    val errorMessage = connection.errorStream?.bufferedReader()?.readText() ?: "Unknown error"
+                    println("❌ [DESKTOP] Failed to insert posture record: $responseCode - $errorMessage")
+                    throw Exception("Insert failed: HTTP $responseCode")
+                }
+            } catch (e: Exception) {
+                println("❌ [DESKTOP] Insert error: ${e.message}")
+                throw e
+            }
+        }
     }
     
-    suspend fun getTodaysPostureRecords(userEmail: String): List<com.example.posturelynew.PostureRecord> {
+    suspend fun getTodaysPostureRecords(userEmail: String): List<com.mobil80.posturely.PostureRecord> {
         println("🔧 [DESKTOP] Mock posture records retrieval for: $userEmail")
         return emptyList()
     }

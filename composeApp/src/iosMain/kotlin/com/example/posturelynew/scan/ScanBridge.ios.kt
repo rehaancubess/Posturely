@@ -1,6 +1,6 @@
-package com.example.posturelynew.scan
+package com.mobil80.posturely.scan
 
-import com.example.posturelynew.supabase.Supa
+import com.mobil80.posturely.supabase.Supa
 import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.Foundation.*
 import platform.darwin.NSObject
